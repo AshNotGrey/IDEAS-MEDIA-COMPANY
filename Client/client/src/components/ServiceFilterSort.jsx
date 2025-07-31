@@ -156,7 +156,7 @@ const ServiceFilterSort = ({
         <div className='flex flex-col sm:flex-row gap-3 w-full sm:w-auto'>
           {/* Filter Button */}
           <Button
-            variant='secondary'
+            variant='text'
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className='flex items-center gap-2'
             size='sm'>
@@ -199,14 +199,14 @@ const ServiceFilterSort = ({
             <div className='flex items-center gap-2'>
               {hasActiveFilters && (
                 <Button
-                  variant='ghost'
+                  variant='text'
                   onClick={clearAllFilters}
                   size='sm'
                   className='text-red-600 hover:text-red-700'>
                   Clear All
                 </Button>
               )}
-              <Button variant='ghost' onClick={() => setIsFilterOpen(false)} size='sm'>
+              <Button variant='text' onClick={() => setIsFilterOpen(false)} size='sm'>
                 <X className='w-4 h-4' />
               </Button>
             </div>

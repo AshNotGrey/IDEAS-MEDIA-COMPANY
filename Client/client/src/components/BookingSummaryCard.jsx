@@ -1,6 +1,7 @@
 import React from "react";
 import { Calendar, Clock, CreditCard } from "lucide-react";
 import formatPrice from "../utils/format";
+import Button from "./Button";
 
 /**
  * BookingSummaryCard Component
@@ -44,12 +45,12 @@ const BookingSummaryCard = ({ selected, date, time }) => {
   };
 
   return (
-    <div className='card w-full md:w-1/3 h-fit'>
+    <div className='card w-full h-fit'>
       <h3 className='text-lg font-semibold mb-4'>Booking Summary</h3>
 
       <div className='space-y-4'>
         {/* Service Details */}
-        <div className='border-b pb-4'>
+        <div className='border-b border-gray-200 dark:border-gray-700 pb-4'>
           <h4 className='font-medium mb-2'>{selected.title}</h4>
           <p className='text-subtle text-sm'>{selected.description}</p>
         </div>
@@ -74,7 +75,7 @@ const BookingSummaryCard = ({ selected, date, time }) => {
         </div>
 
         {/* Pricing */}
-        <div className='border-t pt-4'>
+        <div className='border-t border-gray-200 dark:border-gray-700 pt-4'>
           <div className='flex justify-between items-center mb-2'>
             <span className='font-medium'>Service Fee</span>
             <span>{formatPrice(selected.price)}</span>
@@ -86,12 +87,15 @@ const BookingSummaryCard = ({ selected, date, time }) => {
         </div>
 
         {/* Book Now Button */}
-        <button
-          onClick={handleBookNow}
-          className='btn-primary w-full flex items-center justify-center gap-2 py-3'>
-          <CreditCard className='w-5 h-5' />
+        <Button
+          variant='primary'
+          size='lg'
+          fullWidth={true}
+          leftIcon={<CreditCard className='w-5 h-5' />}
+          animated={true}
+          onClick={handleBookNow}>
           Book Now
-        </button>
+        </Button>
 
         {/* Additional Info */}
         <div className='text-xs text-subtle text-center'>

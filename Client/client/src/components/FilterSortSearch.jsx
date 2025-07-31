@@ -162,7 +162,7 @@ const FilterSortSearch = ({
         <div className='flex flex-col sm:flex-row gap-3 w-full sm:w-auto'>
           {/* Filter Button */}
           <Button
-            variant='secondary'
+            variant='text'
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className='flex items-center gap-2'
             size='sm'>
@@ -205,14 +205,14 @@ const FilterSortSearch = ({
             <div className='flex items-center gap-2'>
               {hasActiveFilters && (
                 <Button
-                  variant='ghost'
+                  variant='text'
                   onClick={clearAllFilters}
                   size='sm'
                   className='text-red-600 hover:text-red-700'>
                   Clear All
                 </Button>
               )}
-              <Button variant='ghost' onClick={() => setIsFilterOpen(false)} size='sm'>
+              <Button variant='text' onClick={() => setIsFilterOpen(false)} size='sm'>
                 <X className='w-4 h-4' />
               </Button>
             </div>
@@ -270,7 +270,9 @@ const FilterSortSearch = ({
                       }}
                       className='text-ideas-accent focus:ring-ideas-accent'
                     />
-                    <span className='text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded'>{tag}</span>
+                    <span className='text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded'>
+                      {tag}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -282,7 +284,9 @@ const FilterSortSearch = ({
             <h4 className='font-medium mb-3'>Price Range</h4>
             <div className='grid grid-cols-2 gap-4'>
               <div>
-                <label className='block text-sm text-black/60 dark:text-white/60 mb-1'>Min Price</label>
+                <label className='block text-sm text-black/60 dark:text-white/60 mb-1'>
+                  Min Price
+                </label>
                 <input
                   type='number'
                   value={localPriceRange.min}
@@ -292,7 +296,9 @@ const FilterSortSearch = ({
                 />
               </div>
               <div>
-                <label className='block text-sm text-black/60 dark:text-white/60 mb-1'>Max Price</label>
+                <label className='block text-sm text-black/60 dark:text-white/60 mb-1'>
+                  Max Price
+                </label>
                 <input
                   type='number'
                   value={localPriceRange.max}
