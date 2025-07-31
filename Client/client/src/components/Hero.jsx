@@ -23,7 +23,8 @@ const slides = [
     ctas: [{ label: "Book Makeover", href: "/makeover", variant: "primary" }],
     images: {
       base: "/images/idealPhotography-hero-bg-2.png",
-      mobile: "/images/idealPhotography-hero-bg-2-mobile.png",
+      mobile: "/images/idealPhotography-hero-bg-2-mobile.jpg",
+      // mobile: "/images/idealPhotography-hero-bg-2-mobile.png",
       desktop: "/images/idealPhotography-hero-bg-2.png",
     },
     blur: 0.1, // More blur for beauty/makeover slide
@@ -38,7 +39,8 @@ const slides = [
     ],
     images: {
       base: "/images/idealPhotography-hero-bg-3.png",
-      mobile: "/images/idealPhotography-hero-bg-3-mobile.png",
+      mobile: "/images/idealPhotography-hero-bg-3-mobile.jpg",
+      // mobile: "/images/idealPhotography-hero-bg-3-mobile.png",
       desktop: "/images/idealPhotography-hero-bg-3.png",
     },
     blur: 0.1, // Medium blur for photoshoot slide
@@ -58,7 +60,8 @@ const slides = [
     ],
     images: {
       base: "/images/idealPhotography-hero-bg-4.png",
-      mobile: "/images/idealPhotography-hero-bg-4-mobile.png",
+      mobile: "/images/idealPhotography-hero-bg-4-mobile.jpg",
+      // mobile: "/images/idealPhotography-hero-bg-4-mobile.png",
       desktop: "/images/idealPhotography-hero-bg-4.png",
     },
     blur: 0.1, // More blur for event coverage slide
