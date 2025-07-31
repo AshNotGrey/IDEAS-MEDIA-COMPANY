@@ -1,0 +1,70 @@
+{
+    "name": "@ideal-photography/shared",
+    "version": "1.2.7",
+    "description": "Shared GraphQL and Mongoose logic for Ideal Photography PWAs - Complete photography business models with authentication, bookings, galleries, reviews, and admin management. Fixed ES module imports and GraphQL schema issues.",
+    "main": "index.js",
+    "type": "module",
+    "files": [
+        "mongoDB/",
+        "graphql/",
+        "validations/",
+        "index.js",
+        "README.md"
+    ],
+    "scripts": {
+        "test": "jest",
+        "prepublishOnly": "echo 'Publishing @ideal-photography/shared package...'"
+    },
+    "keywords": [
+        "photography",
+        "graphql",
+        "mongoose",
+        "apollo",
+        "booking-system",
+        "gallery-management",
+        "review-system",
+        "authentication",
+        "admin-panel",
+        "pwa",
+        "mongodb",
+        "nodejs",
+        "express",
+        "photography-business",
+        "client-management",
+        "portfolio",
+        "ecommerce"
+    ],
+    "author": "Obiajulu Anthothy, AshnotGrey",
+    "license": "UNLICENSED",
+    "engines": {
+        "node": ">=16.0.0"
+    },
+    "dependencies": {
+        "@apollo/server": "^4.9.0",
+        "@graphql-tools/merge": "^8.4.0",
+        "bcryptjs": "^2.4.3",
+        "colors": "^1.4.0",
+        "compression": "^1.7.4",
+        "cors": "^2.8.5",
+        "dayjs": "^1.11.10",
+        "dotenv": "^16.3.0",
+        "express": "^4.18.0",
+        "graphql": "^16.8.0",
+        "graphql-tag": "^2.12.6",
+        "helmet": "^7.1.0",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^7.0.0",
+        "morgan": "^1.10.0",
+        "node-cron": "^3.0.3",
+        "nodemailer": "^6.9.7",
+        "rate-limiter-flexible": "^4.0.1",
+        "uuid": "^9.0.1"
+    },
+    "peerDependencies": {
+        "express": "^4.18.0"
+    },
+    "devDependencies": {
+        "jest": "^29.0.0",
+        "nodemon": "^3.0.2"
+    }
+}

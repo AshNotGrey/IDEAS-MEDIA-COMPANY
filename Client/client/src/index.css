@@ -1,0 +1,235 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base
+{
+  html
+  {
+    @apply text-[16px] font-sans antialiased;
+  }
+
+  body
+  {
+    @apply bg-ideas-white text-black dark:bg-ideas-black dark:text-white;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6
+  {
+    @apply font-heading text-black dark:text-white;
+  }
+
+  p
+  {
+    @apply leading-relaxed text-black/80 dark:text-white/80;
+  }
+
+  a
+  {
+    @apply text-ideas-accent hover:text-ideas-accentHover transition-colors duration-200;
+    text-decoration: none;
+  }
+
+  ::selection
+  {
+    @apply bg-ideas-accent text-white;
+  }
+
+  input,
+  textarea,
+  select,
+  button
+  {
+    @apply focus:outline-none focus:ring-2 focus:ring-ideas-accent;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus
+  {
+    @apply ring-ideas-accent;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"]
+  {
+    @apply w-4 h-4 bg-ideas-white dark:bg-ideas-darkInput border-gray-300 dark:border-gray-600 rounded focus:ring-ideas-accent focus:ring-2 accent-ideas-accent;
+  }
+}
+
+@layer components
+{
+
+  /* === BUTTONS === */
+  .btn
+  {
+    @apply inline-flex items-center justify-center rounded-full font-medium transition-all duration-200 ease-in-out focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary
+  {
+    @apply btn bg-ideas-accent text-white hover:bg-ideas-accentHover focus:ring-2 focus:ring-ideas-accentHover active:bg-ideas-accentHover/90;
+  }
+
+  .btn-secondary
+  {
+    @apply btn border text-black bg-transparent hover:bg-black hover:text-white dark:border-white dark:text-white dark:bg-transparent dark:hover:bg-white dark:hover:text-black;
+  }
+
+  /* === FORMS === */
+  .input
+  {
+    @apply px-4 py-2 border rounded-md bg-ideas-lightInput text-black placeholder-gray-500 dark:bg-ideas-darkInput dark:text-white dark:placeholder-gray-400;
+  }
+
+  .input-error
+  {
+    @apply border-red-500 text-red-700 placeholder-red-400 focus:ring-red-500 focus:border-red-500;
+  }
+
+  .input-disabled
+  {
+    @apply bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500;
+  }
+
+  .checkbox
+  {
+    @apply w-4 h-4 text-ideas-accent bg-ideas-white dark:bg-ideas-darkInput border-gray-300 dark:border-gray-600 rounded focus:ring-ideas-accent focus:ring-2;
+  }
+
+  /* === CARDS === */
+  .card
+  {
+    @apply p-6 rounded-lg bg-white border border-gray-200 dark:bg-ideas-darkInput dark:border-gray-700;
+  }
+
+  .card-hover
+  {
+    @apply transition-shadow hover:shadow-md;
+  }
+
+  /* === LAYOUT UTILITIES === */
+  .stack-safe
+  {
+    @apply relative z-0;
+  }
+
+  .stack-above
+  {
+    @apply relative z-10;
+  }
+
+  .stack-top
+  {
+    @apply relative z-20;
+  }
+
+  .line-clamp-2
+  {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3
+  {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* === TYPOGRAPHY === */
+  .section-title
+  {
+    @apply text-3xl font-heading font-bold text-black dark:text-white;
+  }
+
+  .text-subtle
+  {
+    @apply text-sm text-black/60 dark:text-white/60;
+  }
+
+  /* === UTILITIES === */
+
+  .loader
+  {
+    @apply w-5 h-5 border-2 border-ideas-accent border-t-transparent rounded-full animate-spin;
+  }
+
+  .skeleton
+  {
+    @apply animate-pulse bg-gray-300 dark:bg-gray-700 rounded;
+  }
+}
+
+@layer utilities
+{
+  @keyframes shimmer
+  {
+    0%
+    {
+      transform: translateX(-100%) skewX(-12deg);
+    }
+
+    50%
+    {
+      transform: translateX(0%) skewX(-12deg);
+    }
+
+    100%
+    {
+      transform: translateX(100%) skewX(-12deg);
+    }
+  }
+
+  @keyframes fill-skew
+  {
+    0%
+    {
+      transform: translateX(-100%) skewX(-12deg);
+    }
+
+    100%
+    {
+      transform: translateX(0%) skewX(-12deg);
+    }
+  }
+
+  @keyframes border-slide
+  {
+    0%
+    {
+      transform: translateX(-100%);
+    }
+
+    100%
+    {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer
+  {
+    animation: shimmer 2s infinite ease-in-out;
+  }
+
+  .animate-fill-skew
+  {
+    animation: fill-skew 0.6s ease-out forwards;
+  }
+
+  .animate-border-slide
+  {
+    animation: border-slide 0.8s ease-out forwards;
+  }
+}

@@ -1,0 +1,42 @@
+import { config } from 'dotenv'
+config({ path: `.env.${process.env.NODE_ENV || 'development'}.local` });
+const NODE_ENV = process.env.NODE_ENV
+// ### 🔐 Authentication & Security
+JWT_SECRET = process.env.JWT_SECRET
+JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET
+JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN
+JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN
+BCRYPT_ROUNDS = process.env.BCRYPT_ROUNDS
+RATE_LIMIT_WINDOW_MS = process.env.RATE_LIMIT_WINDOW_MS
+RATE_LIMIT_MAX_REQUESTS = process.env.RATE_LIMIT_MAX_REQUESTS
+
+// ### 🧩 API Keys & External Services
+PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY
+PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
+EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY
+
+// ### ☁️ Cloudinary(Cloud Storage)
+CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET
+CLOUDINARY_URL = process.env.CLOUDINARY_URL
+// ### 📬 SMTP(Email Delivery)
+SMTP_HOST = process.env.SMTP_HOST
+SMTP_PORT = process.env.SMTP_PORT
+SMTP_USER = process.env.SMTP_USER
+SMTP_PASS = process.env.SMTP_PASS
+
+// ### 🛠️ App Config
+NODE_ENV = process.env.NODE_ENV
+PORT = process.env.PORT
+CLIENT_URL = process.env.CLIENT_URL
+ADMIN_URL = process.env.ADMIN_URL
+
+// ### 🗃️ Database
+MONGODB_URI = process.env.MONGODB_URI
+
+// ### 📁 File Uploads
+MAX_FILE_SIZE = process.env.MAX_FILE_SIZE
+ALLOWED_FILE_TYPES = process.env.ALLOWED_FILE_TYPES
+export { NODE_ENV, PORT, JWT_SECRET, JWT_REFRESH_SECRET, JWT_EXPIRES_IN, JWT_REFRESH_EXPIRES_IN, BCRYPT_ROUNDS, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS, PAYSTACK_PUBLIC_KEY, PAYSTACK_SECRET_KEY, EMAILJS_PRIVATE_KEY, CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, CLOUDINARY_URL, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, CLIENT_URL, ADMIN_URL, MONGODB_URI, MAX_FILE_SIZE, ALLOWED_FILE_TYPES };
+// This file is used to load environment variables from a .env file based on the NODE_ENV.  
