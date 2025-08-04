@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Calendar, Clock, CreditCard } from "lucide-react";
 import formatPrice from "../utils/format";
 import Button from "./Button";
@@ -7,6 +7,8 @@ import Button from "./Button";
  * BookingSummaryCard Component
  *
  * Displays a summary of the selected booking with pricing and details.
+ * Automatically focuses the "Book Now" button when a selection is made
+ * to improve user experience and accessibility.
  *
  * @component
  * @param {Object} props - Props object
@@ -16,6 +18,18 @@ import Button from "./Button";
  * @returns {JSX.Element}
  */
 const BookingSummaryCard = ({ selected, date, time }) => {
+  const bookNowButtonRef = useRef(null);
+
+  // Autofocus the Book Now button when a selection is made
+  useEffect(() => {
+    if (selected && bookNowButtonRef.current) {
+      // Small delay to ensure the component is fully rendered
+      setTimeout(() => {
+        bookNowButtonRef.current?.focus();
+      }, 100);
+    }
+  }, [selected]);
+
   if (!selected) {
     return (
       <div className='card w-full md:w-1/3 h-fit'>
@@ -88,6 +102,7 @@ const BookingSummaryCard = ({ selected, date, time }) => {
 
         {/* Book Now Button */}
         <Button
+          ref={bookNowButtonRef}
           variant='primary'
           size='lg'
           fullWidth={true}

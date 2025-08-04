@@ -22,28 +22,23 @@ const slides = [
     subtitle: "Transform your look with our professional stylists and makeup artists.",
     ctas: [{ label: "Book Makeover", href: "/makeover", variant: "primary" }],
     images: {
-      base: "/images/idealPhotography-hero-bg-2.png",
+      base: "/images/idealPhotography-hero-bg-2.jpg",
       mobile: "/images/idealPhotography-hero-bg-2-mobile.jpg",
-      // mobile: "/images/idealPhotography-hero-bg-2-mobile.png",
-      desktop: "/images/idealPhotography-hero-bg-2.png",
+      desktop: "/images/idealPhotography-hero-bg-2.jpg",
     },
-    blur: 0.1, // More blur for beauty/makeover slide
+    blur: 0.1,
   },
   {
     id: "photoshoot",
     title: "Capture Your Moments",
     subtitle: "Book a photoshoot for portraits, families, or creative projects — all in one place.",
-    ctas: [
-      { label: "Book Now", href: "/photoshoot", variant: "primary" },
-      // { label: "View Portfolio", href: "/portfolio", variant: "secondary" },
-    ],
+    ctas: [{ label: "Book Now", href: "/photoshoot", variant: "primary" }],
     images: {
-      base: "/images/idealPhotography-hero-bg-3.png",
+      base: "/images/idealPhotography-hero-bg-3.jpg",
       mobile: "/images/idealPhotography-hero-bg-3-mobile.jpg",
-      // mobile: "/images/idealPhotography-hero-bg-3-mobile.png",
-      desktop: "/images/idealPhotography-hero-bg-3.png",
+      desktop: "/images/idealPhotography-hero-bg-3.jpg",
     },
-    blur: 0.1, // Medium blur for photoshoot slide
+    blur: 0.1,
   },
   {
     id: "cover-events",
@@ -59,12 +54,11 @@ const slides = [
       },
     ],
     images: {
-      base: "/images/idealPhotography-hero-bg-4.png",
+      base: "/images/idealPhotography-hero-bg-4.jpg",
       mobile: "/images/idealPhotography-hero-bg-4-mobile.jpg",
-      // mobile: "/images/idealPhotography-hero-bg-4-mobile.png",
-      desktop: "/images/idealPhotography-hero-bg-4.png",
+      desktop: "/images/idealPhotography-hero-bg-4.jpg",
     },
-    blur: 0.1, // More blur for event coverage slide
+    blur: 0.1,
   },
 ];
 
