@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Store, ShoppingCart } from "lucide-react";
+import { Store, ShoppingCart, Calendar, Eye } from "lucide-react";
 import formatPrice from "../utils/format";
 import WishlistButton from "./WishlistButton";
 import Button from "./Button";
@@ -41,6 +41,7 @@ const ProductCard = ({
   reviewCount = 134,
   discountValidUntil = "July 30",
   loading = false,
+  isRental = false,
   onViewDetails,
   onAddToCart,
 }) => {
@@ -145,7 +146,10 @@ const ProductCard = ({
 
         {/* Price Section */}
         <div className='text-sm sm:text-base leading-snug'>
-          <span className='font-bold text-base sm:text-lg'>{formatPrice(price)}</span>
+          <span className='font-bold text-base sm:text-lg'>
+            {formatPrice(price)}
+            {isRental ? "/day" : ""}
+          </span>
           {originalPrice > price && (
             <>
               <span className='line-through text-subtle text-xs sm:text-sm ml-2'>
@@ -163,20 +167,28 @@ const ProductCard = ({
           <Button
             variant='secondary'
             animated={true}
-            className='w-4/5 text-xs sm:text-sm'
+            fullWidth={isRental}
+            className={isRental ? "w-4/5 text-xs sm:text-sm" : "w-4/5 text-xs sm:text-sm"}
             onClick={onViewDetails}
-            size='lg'>
+            size='md'
+            leftIcon={<Eye className='w-4 h-4' />}>
             View Details
           </Button>
           <Button
             variant='primary'
-            className='w-1/5 p-0 flex items-center justify-center'
+            className={
+              isRental ? "w-1/5 text-xs sm:text-sm" : "w-1/5 p-0 flex items-center justify-center"
+            }
             onClick={onAddToCart}
             disabled={stock === 0}
             animated={true}
-            size='lg'
-            title={stock === 0 ? "Out of stock" : undefined}>
-            <ShoppingCart className='w-4 h-4 sm:w-5 sm:h-5' />
+            size='md'
+            title={stock === 0 ? "Out of stock" : isRental ? "Select Dates" : "Add to Cart"}>
+            {isRental ? (
+              <Calendar className='w-4 h-4 sm:w-5 sm:h-5 mr-1' />
+            ) : (
+              <ShoppingCart className='w-4 h-4 sm:w-5 sm:h-5' />
+            )}
           </Button>
         </div>
 

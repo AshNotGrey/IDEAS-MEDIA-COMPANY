@@ -92,9 +92,9 @@ const Button = React.forwardRef(
 
     const finalClass = [
       ...base,
-      ...variants[variant],
+      ...(variants[variant] || []),
       color && colorClasses[color],
-      sizes[size],
+      ...(sizes[size] ? [sizes[size]] : []),
       fullWidth && "w-full",
       loading && "relative text-transparent",
       animated && animatedVariants[variant],

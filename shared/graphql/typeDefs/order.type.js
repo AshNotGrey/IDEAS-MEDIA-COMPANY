@@ -327,6 +327,13 @@ export default gql`
     endDate: String!
     pickupTime: String
     returnTime: String
+    referee: RefereeInfoInput
+  }
+  
+  input RefereeInfoInput {
+    name: String!
+    email: String!
+    phone: String!
   }
 
   input ServiceDetailsInput {

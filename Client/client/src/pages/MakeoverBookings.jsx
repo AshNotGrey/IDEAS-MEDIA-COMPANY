@@ -3,13 +3,23 @@ import MakeoverCard from "../components/MakeoverCard";
 import BookingSummaryCard from "../components/BookingSummaryCard";
 import DateTimePicker from "../components/DateTimePicker";
 import ServiceFilterSort from "../components/ServiceFilterSort";
+import ServiceDetailsModal from "../components/ServiceDetailsModal";
+import Pagination from "../components/Pagination";
 import { useServiceFilters } from "../hooks/useServiceFilters";
+import { useResponsivePagination } from "../hooks/useResponsivePagination";
 import { MAKEOVERS } from "../constants";
 
 export default function MakeoverBooking() {
   const [selected, setSelected] = useState(null);
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState("12:00");
+
+  // Modal state for service details
+  const [modalService, setModalService] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Get responsive items per page
+  const itemsPerPage = useResponsivePagination();
 
   // Use the service filters hook
   const {
@@ -20,15 +30,34 @@ export default function MakeoverBooking() {
     sortBy,
     sortOrder,
     dateRange,
+    currentPage,
+    totalPages,
     handleSearchChange,
     handleFilterChange,
     handleSortChange,
     handleDateRangeChange,
+    handlePageChange,
     stats,
-  } = useServiceFilters(MAKEOVERS);
+  } = useServiceFilters(MAKEOVERS, itemsPerPage);
 
   const handleSelect = (item) => {
     setSelected(item);
+  };
+
+  const handleViewDetails = (service) => {
+    setModalService(service);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalService(null);
+  };
+
+  const handleBookFromModal = (service) => {
+    setSelected(service);
+    setIsModalOpen(false);
+    setModalService(null);
   };
 
   return (
@@ -64,13 +93,33 @@ export default function MakeoverBooking() {
       )}
 
       {/* Main Content */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8'>
         {/* Left Column — Makeover Cards */}
-        <div className='space-y-4'>
+        <div className='lg:col-span-2'>
           {filteredServices.length > 0 ? (
-            filteredServices.map((item) => (
-              <MakeoverCard key={item.id} service={item} onSelect={handleSelect} />
-            ))
+            <>
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6'>
+                {filteredServices.map((item) => (
+                  <MakeoverCard
+                    key={item.id}
+                    service={item}
+                    onSelect={handleSelect}
+                    onViewDetails={handleViewDetails}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              <div className='mt-8'>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={stats.filtered}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            </>
           ) : (
             <div className='text-center py-12'>
               <div className='text-black/60 dark:text-white/60 text-lg mb-2'>
@@ -84,27 +133,37 @@ export default function MakeoverBooking() {
         </div>
 
         {/* Right Column — Booking Details */}
-        <div className='space-y-6'>
-          {selected ? (
-            <>
-              <div className='card w-full h-fit mb-4'>
-                <h2 className='text-xl font-semibold mb-4'>Booking Details</h2>
-                <DateTimePicker date={date} setDate={setDate} time={time} setTime={setTime} />
+        <div className='lg:col-span-1'>
+          <div className='sticky top-8 space-y-6'>
+            {selected ? (
+              <>
+                <div className='card w-full h-fit mb-4'>
+                  <h2 className='text-xl font-semibold mb-4'>Booking Details</h2>
+                  <DateTimePicker date={date} setDate={setDate} time={time} setTime={setTime} />
+                </div>
+                <BookingSummaryCard selected={selected} date={date} time={time} />
+              </>
+            ) : (
+              <div className='text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg'>
+                <div className='text-black/60 dark:text-white/60 text-lg mb-2'>
+                  Select a service to book
+                </div>
+                <p className='text-black/60 dark:text-white/60'>
+                  Choose a makeover service to start your booking.
+                </p>
               </div>
-              <BookingSummaryCard selected={selected} date={date} time={time} />
-            </>
-          ) : (
-            <div className='text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg'>
-              <div className='text-black/60 dark:text-white/60 text-lg mb-2'>
-                Select a service to book
-              </div>
-              <p className='text-black/60 dark:text-white/60'>
-                Choose a makeover service from the left to start your booking.
-              </p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Service Details Modal */}
+      <ServiceDetailsModal
+        service={modalService}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onBook={handleBookFromModal}
+      />
     </div>
   );
 }

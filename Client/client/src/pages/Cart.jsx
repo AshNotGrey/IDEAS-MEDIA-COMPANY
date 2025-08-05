@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CartItem from "../components/CartItem";
 import CartSummary from "../components/CartSummary";
-import { Heart, ShoppingCart } from "lucide-react";
+import BookingEditModal from "../components/BookingEditModal";
+import BulkEditModal from "../components/BulkEditModal";
+import { Heart, ShoppingCart, Edit3 } from "lucide-react";
 import { useCart } from "../utils/useCart";
-import { populateCartWithDemoData } from "../utils/demoData";
+
 import Button from "../components/Button";
 
 /**
@@ -18,6 +20,9 @@ import Button from "../components/Button";
  */
 const Cart = () => {
   const navigate = useNavigate();
+  const [editingItem, setEditingItem] = useState(null);
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+
   const {
     items: cartItems,
     subtotal,
@@ -26,6 +31,7 @@ const Cart = () => {
     updateQuantity,
     removeItem,
     addItem,
+    updateItem,
   } = useCart();
 
   const handleIncrease = (id) => {
@@ -51,13 +57,75 @@ const Cart = () => {
     navigate("/checkout");
   };
 
-  const handlePopulateDemoData = () => {
-    populateCartWithDemoData(addItem);
+  const handleEditBooking = (item) => {
+    setEditingItem(item);
+  };
+
+  const handleSaveBookingChanges = async (itemId, newDetails) => {
+    // Find the item to update
+    const item = cartItems.find((item) => item.id === itemId);
+    if (!item) return;
+
+    // Create updated item with new booking details
+    const updatedItem = {
+      ...item,
+      ...(newDetails.type === "service"
+        ? { serviceDetails: newDetails }
+        : { rentalDetails: newDetails }),
+    };
+
+    // Recalculate price for rentals if duration changed
+    if (newDetails.type === "rental") {
+      const startDate = new Date(newDetails.startDate);
+      const endDate = new Date(newDetails.endDate);
+      const duration = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)));
+      const dailyRate =
+        item.rentalDetails?.dailyRate || item.price / (item.rentalDetails?.duration || 1);
+      const totalRental = dailyRate * duration;
+      const securityDeposit = dailyRate * 0.2;
+
+      updatedItem.price = totalRental + securityDeposit;
+      updatedItem.rentalDetails = {
+        ...newDetails,
+        duration,
+        dailyRate,
+        totalRental,
+        securityDeposit,
+      };
+    }
+
+    // Update cart (you'd need to implement updateItem in your cart context)
+    if (updateItem) {
+      updateItem(itemId, updatedItem);
+    } else {
+      // Fallback: remove and re-add
+      removeItem(itemId);
+      addItem(updatedItem);
+    }
+
+    console.log("Updated booking:", updatedItem);
+  };
+
+  const handleBulkEdit = () => {
+    setShowBulkEdit(true);
+  };
+
+  const handleBulkSave = (updatedItems) => {
+    updatedItems.forEach((item) => {
+      if (updateItem) {
+        updateItem(item.id, item);
+      } else {
+        removeItem(item.id);
+        addItem(item);
+      }
+    });
   };
 
   // Ensure cartItems is always an array
   const items = cartItems || [];
   const isEmpty = items.length === 0;
+  const timeBasedItems = items.filter((item) => item.type === "service" || item.type === "rental");
+  const hasTimeBasedItems = timeBasedItems.length > 0;
 
   return (
     <section className='max-w-6xl mx-auto px-4 py-section'>
@@ -72,7 +140,13 @@ const Cart = () => {
               onClick={() => navigate("/equipment")}
               variant='primary'
               className='px-6 py-2 text-sm'>
-              Continue Shopping
+              Shop Equipment
+            </Button>
+            <Button
+              onClick={() => navigate("/makeover")}
+              variant='secondary'
+              className='px-6 py-2 text-sm'>
+              Book Services
             </Button>
             <Button
               onClick={() => navigate("/wishlist")}
@@ -80,19 +154,29 @@ const Cart = () => {
               className='px-6 py-2 text-sm'>
               Go to Wishlist
             </Button>
-            {/* todo: Remove after testing */}
-            <Button
-              onClick={handlePopulateDemoData}
-              variant='secondary'
-              className='px-6 py-2 text-sm border-dashed'>
-              Load Demo Items
-            </Button>
           </div>
         </div>
       ) : (
         <div className='grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8'>
           {/* === Cart Items === */}
           <div className='flex flex-col gap-6'>
+            {/* Bulk Edit Button */}
+            {hasTimeBasedItems && (
+              <div className='flex justify-between items-center mb-6'>
+                <h2 className='text-xl font-semibold text-gray-800 dark:text-gray-200'>
+                  Your Items ({items.length})
+                </h2>
+                <Button
+                  variant='secondary'
+                  size='sm'
+                  leftIcon={<Edit3 className='w-4 h-4' />}
+                  onClick={handleBulkEdit}
+                  className='shadow-sm hover:shadow-md transition-shadow'>
+                  Bulk Edit ({timeBasedItems.length})
+                </Button>
+              </div>
+            )}
+
             {items.map((item) => (
               <CartItem
                 key={item.id}
@@ -100,6 +184,7 @@ const Cart = () => {
                 onIncrease={() => handleIncrease(item.id)}
                 onDecrease={() => handleDecrease(item.id)}
                 onRemove={() => handleRemove(item.id)}
+                onEditBooking={() => handleEditBooking(item)}
               />
             ))}
           </div>
@@ -120,7 +205,13 @@ const Cart = () => {
                   onClick={() => navigate("/equipment")}
                   variant='secondary'
                   className='flex-1 px-4 py-2 text-sm'>
-                  Continue Shopping
+                  Shop Equipment
+                </Button>
+                <Button
+                  onClick={() => navigate("/makeover")}
+                  variant='secondary'
+                  className='flex-1 px-4 py-2 text-sm'>
+                  Book Services
                 </Button>
                 <Button
                   onClick={() => navigate("/wishlist")}
@@ -134,6 +225,22 @@ const Cart = () => {
           </div>
         </div>
       )}
+
+      {/* Booking Edit Modal */}
+      <BookingEditModal
+        item={editingItem}
+        isOpen={editingItem !== null}
+        onClose={() => setEditingItem(null)}
+        onSave={handleSaveBookingChanges}
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditModal
+        items={timeBasedItems}
+        isOpen={showBulkEdit}
+        onClose={() => setShowBulkEdit(false)}
+        onSave={handleBulkSave}
+      />
     </section>
   );
 };

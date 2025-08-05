@@ -32,6 +32,7 @@ const NAV_LINKS = [
   { label: "Make overs", href: "/makeover" },
   { label: "Studio", href: "/photoshoot" },
   { label: "Shop", href: "/mini-mart" },
+  { label: "Event Coverage", href: "/events" },
 ];
 
 /**

@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import RentalBookingCard from "../components/RentalBookingCard";
+import RentalDateTimePicker from "../components/RentalDateTimePicker";
 import FilterSortSearch from "../components/FilterSortSearch";
 import Pagination from "../components/Pagination";
 import { useProductFilters } from "../hooks/useProductFilters";
+import { useResponsivePagination } from "../hooks/useResponsivePagination";
 import { DUMMY_PRODUCTS } from "../constants";
-import { useCart } from "../utils/useCart";
 
 /**
  * EquipmentRentals page component.
@@ -16,12 +18,27 @@ import { useCart } from "../utils/useCart";
  */
 const EquipmentRentals = () => {
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const [selectedEquipment, setSelectedEquipment] = useState(null);
+  const [startDate, setStartDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const dayAfterTomorrow = new Date();
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+    return dayAfterTomorrow;
+  });
+  const [pickupTime, setPickupTime] = useState("09:00");
+  const [returnTime, setReturnTime] = useState("17:00");
 
   // Filter to only show equipment (cameras, lenses, lighting)
   const equipmentProducts = DUMMY_PRODUCTS.filter((product) =>
     ["cameras", "lenses", "lighting"].includes(product.category)
   );
+
+  // Get responsive items per page
+  const itemsPerPage = useResponsivePagination();
 
   // Use the product filters hook
   const {
@@ -41,21 +58,18 @@ const EquipmentRentals = () => {
     handlePriceRangeChange,
     handlePageChange,
     stats,
-  } = useProductFilters(equipmentProducts);
+  } = useProductFilters(equipmentProducts, itemsPerPage);
 
   const handleViewDetails = (product) => {
     navigate(`/product/${product.id}`, { state: { product } });
   };
 
-  const handleAddToCart = (product) => {
-    addItem({
-      ...product,
-      quantity: 1,
-    });
+  const handleSelectEquipment = (product) => {
+    setSelectedEquipment(product);
   };
 
   return (
-    <section className='max-w-7xl mx-auto px-4 py-section'>
+    <div className='max-w-7xl mx-auto px-gutter py-section'>
       <h1 className='section-title mb-8'>Equipment Rentals</h1>
 
       {/* Filter, Sort, and Search */}
@@ -86,40 +100,83 @@ const EquipmentRentals = () => {
         </div>
       )}
 
-      {/* Products Grid */}
-      {filteredProducts.length > 0 ? (
-        <>
-          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8'>
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                {...product}
-                onViewDetails={() => handleViewDetails(product)}
-                onAddToCart={() => handleAddToCart(product)}
-              />
-            ))}
-          </div>
+      {/* Main Content */}
+      <div className='grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8'>
+        {/* Left Column — Equipment Grid */}
+        <div className='space-y-6'>
+          {filteredProducts.length > 0 ? (
+            <>
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6'>
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    {...product}
+                    onViewDetails={() => handleViewDetails(product)}
+                    onAddToCart={() => handleSelectEquipment(product)}
+                    isRental={true}
+                  />
+                ))}
+              </div>
 
-          {/* Pagination */}
-          <div className='mt-8'>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={stats.filtered}
-              itemsPerPage={12}
-              onPageChange={handlePageChange}
-            />
-          </div>
-        </>
-      ) : (
-        <div className='text-center py-12'>
-          <div className='text-black/60 dark:text-white/60 text-lg mb-2'>No equipment found</div>
-          <p className='text-black/60 dark:text-white/60'>
-            Try adjusting your search terms or filters to find the equipment you need.
-          </p>
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={stats.filtered}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+              />
+            </>
+          ) : (
+            <div className='text-center py-12'>
+              <div className='text-black/60 dark:text-white/60 text-lg mb-2'>
+                No equipment found
+              </div>
+              <p className='text-black/60 dark:text-white/60'>
+                Try adjusting your search terms or filters to find the equipment you need.
+              </p>
+            </div>
+          )}
         </div>
-      )}
-    </section>
+
+        {/* Right Column — Rental Booking */}
+        <div className='space-y-6'>
+          {selectedEquipment ? (
+            <>
+              <div className='card w-full h-fit'>
+                <h2 className='text-xl font-semibold mb-4'>Rental Details</h2>
+                <RentalDateTimePicker
+                  startDate={startDate}
+                  setStartDate={setStartDate}
+                  endDate={endDate}
+                  setEndDate={setEndDate}
+                  pickupTime={pickupTime}
+                  setPickupTime={setPickupTime}
+                  returnTime={returnTime}
+                  setReturnTime={setReturnTime}
+                />
+              </div>
+              <RentalBookingCard
+                selected={selectedEquipment}
+                startDate={startDate}
+                endDate={endDate}
+                pickupTime={pickupTime}
+                returnTime={returnTime}
+              />
+            </>
+          ) : (
+            <div className='text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg'>
+              <div className='text-black/60 dark:text-white/60 text-lg mb-2'>
+                Select equipment to rent
+              </div>
+              <p className='text-black/60 dark:text-white/60'>
+                Choose equipment from the left to configure your rental dates and times.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

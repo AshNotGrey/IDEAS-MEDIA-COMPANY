@@ -4,6 +4,7 @@ import ProductCard from "../components/ProductCard";
 import FilterSortSearch from "../components/FilterSortSearch";
 import Pagination from "../components/Pagination";
 import { useProductFilters } from "../hooks/useProductFilters";
+import { useResponsivePagination } from "../hooks/useResponsivePagination";
 import { DUMMY_PRODUCTS } from "../constants";
 import { useCart } from "../utils/useCart";
 
@@ -17,6 +18,9 @@ import { useCart } from "../utils/useCart";
 const MiniMart = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
+
+  // Get responsive items per page
+  const itemsPerPage = useResponsivePagination();
 
   // Use the product filters hook
   const {
@@ -36,7 +40,7 @@ const MiniMart = () => {
     handlePriceRangeChange,
     handlePageChange,
     stats,
-  } = useProductFilters(DUMMY_PRODUCTS);
+  } = useProductFilters(DUMMY_PRODUCTS, itemsPerPage);
 
   const handleViewDetails = (product) => {
     navigate(`/product/${product.id}`, { state: { product } });
@@ -101,7 +105,7 @@ const MiniMart = () => {
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={stats.filtered}
-              itemsPerPage={12}
+              itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
             />
           </div>

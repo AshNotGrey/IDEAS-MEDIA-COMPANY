@@ -79,7 +79,12 @@ const orderSchema = new mongoose.Schema({
             endDate: Date,
             duration: Number, // hours
             pickupTime: String,
-            returnTime: String
+            returnTime: String,
+            referee: {
+                name: String,
+                email: String,
+                phone: String,
+            }
         },
 
         // Service booking specific

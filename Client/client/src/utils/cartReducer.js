@@ -30,7 +30,13 @@ export const cartReducer = (state, action) => {
         }
 
         case "ADD_ITEM": {
-            const existingItemIndex = state.items.findIndex((item) => item.id === action.payload.id);
+            const existingItemIndex = state.items.findIndex((item) => {
+                // For services and rentals, don't merge - each booking is unique due to date/time
+                if (action.payload.type === "service" || action.payload.type === "rental") {
+                    return false;
+                }
+                return item.id === action.payload.id;
+            });
             let newItems;
 
             if (existingItemIndex >= 0) {

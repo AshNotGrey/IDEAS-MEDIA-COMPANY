@@ -4,32 +4,21 @@ import { Heart, ShoppingCart, Trash2 } from "lucide-react";
 import WishlistItem from "../components/WishlistItem";
 import { useWishlist } from "../utils/useWishlist";
 import { useCart } from "../utils/useCart";
-import { populateWishlistWithDemoData } from "../utils/demoData";
+
 import Button from "../components/Button";
 
 /**
  * Wishlist Page
  *
  * Displays user's saved items with options to move to cart or remove.
- * Includes demo data population for testing.
  *
  * @component
  * @returns {JSX.Element}
  */
 const Wishlist = () => {
   const navigate = useNavigate();
-  const {
-    items: wishlistItems,
-    removeFromWishlist,
-    clearWishlist,
-    moveToCart,
-    addToWishlist,
-  } = useWishlist();
+  const { items: wishlistItems, removeFromWishlist, clearWishlist, moveToCart } = useWishlist();
   const { addItem } = useCart();
-
-  const handlePopulateDemoData = () => {
-    populateWishlistWithDemoData(addToWishlist);
-  };
 
   const handleMoveToCart = (id) => {
     // First move the item from wishlist (this returns the item)
@@ -90,10 +79,6 @@ const Wishlist = () => {
               size='sm'
               icon={<ShoppingCart className='w-4 h-4' />}>
               View Cart
-            </Button>
-            {/* todo: Remove after testing */}
-            <Button onClick={handlePopulateDemoData} variant='secondary' size='sm' border='dashed'>
-              Load Demo Items
             </Button>
           </div>
         </div>

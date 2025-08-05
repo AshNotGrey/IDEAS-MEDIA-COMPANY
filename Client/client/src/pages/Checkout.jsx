@@ -61,11 +61,17 @@ const Checkout = () => {
     setIsPaymentProcessing(false);
     clearCart(); // Clear cart after successful payment
 
+    // Separate services and products for order processing
+    const services = cartItems.filter((item) => item.type === "service");
+    const products = cartItems.filter((item) => item.type !== "service");
+
     // TODO: Send order to backend
     console.log("Order completed:", {
       customerData: customerInfo,
       orderTotal: total,
       cartItems: cartItems,
+      services: services,
+      products: products,
       paymentData: paymentData,
     });
   };
@@ -123,89 +129,115 @@ const Checkout = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-          {/* === Contact & Shipping Form === */}
-          <div className='card flex flex-col gap-4'>
-            <h2 className='text-lg font-semibold mb-2'>Contact & Pickup Info</h2>
-
-            <input
-              type='text'
-              placeholder='Full Name'
-              defaultValue={customerInfo.name}
-              {...register("name", { required: true })}
-              className='input'
-            />
-            <input
-              type='email'
-              placeholder='Email'
-              defaultValue={email || customerInfo.email}
-              {...register("email", { required: true })}
-              className='input'
-            />
-            <input
-              type='tel'
-              placeholder='Phone'
-              defaultValue={customerInfo.phone}
-              {...register("phone", { required: true })}
-              className='input'
-            />
-            <input
-              type='text'
-              placeholder='Address (for billing purposes)'
-              defaultValue={customerInfo.address}
-              {...register("address", { required: true })}
-              className='input'
-            />
-            <input
-              type='text'
-              placeholder='City'
-              defaultValue={customerInfo.city}
-              {...register("city")}
-              className='input'
-            />
-            <select {...register("country")} className='input' defaultValue={customerInfo.country}>
-              <option value=''>Country</option>
-              <option value='NG'>Nigeria</option>
-              <option value='GH'>Ghana</option>
-              <option value='KE'>Kenya</option>
-              <option value='UK'>United Kingdom</option>
-            </select>
-
-            <div className='text-sm text-subtle bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md'>
-              <strong>Pickup Information:</strong> All items will be picked up at our headquarters.
-              You will receive pickup instructions via email after payment confirmation.
+          {/* Customer Information Form */}
+          <div className='card p-6'>
+            <h2 className='text-lg font-semibold mb-4'>Customer Information</h2>
+            <div className='space-y-4'>
+              <div>
+                <label className='block text-sm font-medium mb-1'>Full Name</label>
+                <input
+                  {...register("name", { required: true })}
+                  type='text'
+                  className='w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-ideas-darkInput'
+                  placeholder='Enter your full name'
+                />
+              </div>
+              <div>
+                <label className='block text-sm font-medium mb-1'>Email Address</label>
+                <input
+                  {...register("email", { required: true })}
+                  type='email'
+                  className='w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-ideas-darkInput'
+                  placeholder='Enter your email'
+                />
+              </div>
+              <div>
+                <label className='block text-sm font-medium mb-1'>Phone Number</label>
+                <input
+                  {...register("phone", { required: true })}
+                  type='tel'
+                  className='w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-ideas-darkInput'
+                  placeholder='Enter your phone number'
+                />
+              </div>
+              <div>
+                <label className='block text-sm font-medium mb-1'>Address</label>
+                <input
+                  {...register("address", { required: true })}
+                  type='text'
+                  className='w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-ideas-darkInput'
+                  placeholder='Enter your address'
+                />
+              </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <label className='block text-sm font-medium mb-1'>City</label>
+                  <input
+                    {...register("city", { required: true })}
+                    type='text'
+                    className='w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-ideas-darkInput'
+                    placeholder='City'
+                  />
+                </div>
+                <div>
+                  <label className='block text-sm font-medium mb-1'>Country</label>
+                  <input
+                    {...register("country", { required: true })}
+                    type='text'
+                    className='w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-ideas-darkInput'
+                    placeholder='Country'
+                  />
+                </div>
+              </div>
             </div>
+            <Button type='submit' variant='primary' size='lg' fullWidth={true} className='mt-6'>
+              Proceed to Payment
+            </Button>
           </div>
 
-          {/* === Order Summary + Paystack === */}
-          <div className='card flex flex-col justify-between gap-6'>
-            <div>
-              <h2 className='text-lg font-semibold mb-2'>Order Summary</h2>
-              <div className='flex justify-between text-sm mb-2'>
-                <span className='text-subtle'>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <div className='flex justify-between text-sm mb-2'>
-                <span className='text-subtle text-green-600 dark:text-green-400'>Discount</span>
-                <span className='text-green-600 dark:text-green-400'>−${discount.toFixed(2)}</span>
-              </div>
-              <div className='divider my-4' />
-              <div className='flex justify-between font-semibold text-base'>
-                <span>Total</span>
-                <span>${total.toFixed(2)}</span>
-              </div>
-              <div className='text-xs text-subtle text-center mt-2'>
-                * Items will be picked up at our HQ
-              </div>
+          {/* Order Summary */}
+          <div className='card p-6'>
+            <h2 className='text-lg font-semibold mb-4'>Order Summary</h2>
+            <div className='space-y-4 mb-6'>
+              {cartItems?.map((item) => (
+                <div key={item.id} className='flex justify-between items-start'>
+                  <div className='flex-1'>
+                    <h4 className='font-medium'>{item.title}</h4>
+                    {item.type === "service" && item.serviceDetails && (
+                      <div className='text-sm text-subtle mt-1'>
+                        <p>📅 {new Date(item.serviceDetails.date).toLocaleDateString()}</p>
+                        <p>⏰ {item.serviceDetails.time}</p>
+                      </div>
+                    )}
+                    {item.type !== "service" && (
+                      <p className='text-sm text-subtle'>Qty: {item.quantity}</p>
+                    )}
+                  </div>
+                  <div className='text-right'>
+                    <p className='font-medium'>
+                      ₦{(item.price * (item.quantity || 1)).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <Button
-              type='submit'
-              variant='primary'
-              size='lg'
-              className='w-full'
-              disabled={cartItems.length === 0}>
-              {cartItems.length === 0 ? "Cart is Empty" : "Complete Order"}
-            </Button>
+            <div className='border-t border-gray-200 dark:border-gray-700 pt-4'>
+              <div className='flex justify-between items-center mb-2'>
+                <span>Subtotal</span>
+                <span>₦{subtotal?.toLocaleString()}</span>
+              </div>
+              {discount > 0 && (
+                <div className='flex justify-between items-center mb-2 text-green-600'>
+                  <span>Discount</span>
+                  <span>-₦{discount?.toLocaleString()}</span>
+                </div>
+              )}
+              <div className='flex justify-between items-center text-lg font-bold'>
+                <span>Total</span>
+                <span>₦{total?.toLocaleString()}</span>
+              </div>
+            </div>
           </div>
         </form>
       )}

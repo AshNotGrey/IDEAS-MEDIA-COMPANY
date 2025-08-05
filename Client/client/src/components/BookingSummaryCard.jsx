@@ -1,6 +1,9 @@
-import React, { useEffect, useRef } from "react";
-import { Calendar, Clock, CreditCard } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Calendar, Clock, CreditCard, ShoppingCart, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import formatPrice from "../utils/format";
+import { useCart as useLocalCart } from "../utils/useCart";
+import { useCart as useServerCart } from "../graphql/hooks/useOrders";
 import Button from "./Button";
 
 /**
@@ -19,6 +22,10 @@ import Button from "./Button";
  */
 const BookingSummaryCard = ({ selected, date, time }) => {
   const bookNowButtonRef = useRef(null);
+  const navigate = useNavigate();
+  const { addItem } = useLocalCart(); // Local cart for offline functionality
+  const { addToCart: addToServerCart, addLoading } = useServerCart(); // Server cart for sync
+  const [isAdded, setIsAdded] = useState(false);
 
   // Autofocus the Book Now button when a selection is made
   useEffect(() => {
@@ -48,14 +55,51 @@ const BookingSummaryCard = ({ selected, date, time }) => {
     });
   };
 
-  const handleBookNow = () => {
-    console.log("Booking:", {
-      service: selected.title,
-      date: formatDate(date),
-      time: time,
+  const handleAddToCart = async () => {
+    const bookingItem = {
+      id: `service-${selected.id}-${Date.now()}`,
+      productId: selected.id,
+      type: "service",
+      title: selected.title,
+      description: selected.description,
+      image: selected.image || "/images/idealPhotography-Asset product-placeholder.png",
       price: selected.price,
-    });
-    // TODO: Implement booking logic
+      quantity: 1,
+      serviceDetails: {
+        date: date.toISOString().split("T")[0],
+        time: time,
+        duration: selected.duration || 120,
+        specialRequests: selected.specialRequests || [],
+      },
+    };
+
+    // Add to local cart for immediate UI feedback
+    addItem(bookingItem);
+    setIsAdded(true);
+
+    // Also try to sync with server cart
+    try {
+      const result = await addToServerCart(bookingItem);
+      if (result.success) {
+        console.log("Service synced to server cart:", result.order);
+      }
+    } catch (error) {
+      console.warn("Failed to sync to server cart:", error);
+      // Local cart still works as fallback
+    }
+
+    // Reset the success state after 2 seconds
+    setTimeout(() => setIsAdded(false), 2000);
+
+    console.log("Service added to cart:", bookingItem);
+  };
+
+  const handleBookNow = () => {
+    handleAddToCart();
+    // Navigate to cart after a brief delay to show the success state
+    setTimeout(() => {
+      navigate("/cart");
+    }, 1000);
   };
 
   return (
@@ -100,20 +144,38 @@ const BookingSummaryCard = ({ selected, date, time }) => {
           </div>
         </div>
 
-        {/* Book Now Button */}
-        <Button
-          ref={bookNowButtonRef}
-          variant='primary'
-          size='lg'
-          fullWidth={true}
-          leftIcon={<CreditCard className='w-5 h-5' />}
-          animated={true}
-          onClick={handleBookNow}>
-          Book Now
-        </Button>
+        {/* Action Buttons */}
+        <div className='space-y-3'>
+          {/* Add to Cart Button */}
+          <Button
+            variant={isAdded ? "success" : "secondary"}
+            size='lg'
+            fullWidth={true}
+            leftIcon={isAdded ? <Plus className='w-5 h-5' /> : <ShoppingCart className='w-5 h-5' />}
+            animated={true}
+            onClick={handleAddToCart}
+            disabled={isAdded || addLoading}
+            loading={addLoading}>
+            {isAdded ? "Added to Cart!" : addLoading ? "Adding..." : "Add to Cart"}
+          </Button>
+
+          {/* Book Now Button */}
+          <Button
+            ref={bookNowButtonRef}
+            variant='primary'
+            size='lg'
+            fullWidth={true}
+            leftIcon={<CreditCard className='w-5 h-5' />}
+            animated={true}
+            onClick={handleBookNow}>
+            Book Now
+          </Button>
+        </div>
 
         {/* Additional Info */}
-        <div className='text-xs text-subtle text-center'>
+        <div className='text-xs text-subtle text-center space-y-1'>
+          <p>✓ Add to cart to book multiple services</p>
+          <p>✓ Book Now to proceed directly to checkout</p>
           <p>Payment will be processed securely</p>
           <p>Free cancellation up to 24 hours before</p>
         </div>
