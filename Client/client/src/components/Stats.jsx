@@ -9,7 +9,7 @@ import gsap from "gsap";
  *
  * @component
  * @example
- * <JumbotronStats />
+ * <Stats />
  *
  * @returns {JSX.Element} Animated stats section
  */
@@ -21,7 +21,7 @@ const stats = [
   { id: 4, name: "Cities served", value: 12, suffix: "" },
 ];
 
-export default function JumbotronStats() {
+export default function Stats() {
   const [counts, setCounts] = useState(Array(stats.length).fill(0));
   const [hasAnimated, setHasAnimated] = useState(false);
   const { ref, inView } = useInView({

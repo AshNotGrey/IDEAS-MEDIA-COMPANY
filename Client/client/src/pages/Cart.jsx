@@ -199,8 +199,8 @@ const Cart = () => {
             />
 
             {/* Additional Actions */}
-            <div className='card p-4'>
-              <div className='flex flex-col sm:flex-row gap-3'>
+            <div className='card px-2 py-4'>
+              <div className='flex flex-col sm:flex-row gap-2'>
                 <Button
                   onClick={() => navigate("/equipment")}
                   variant='secondary'

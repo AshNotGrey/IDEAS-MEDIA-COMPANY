@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useCart } from "../utils/useCart";
 import PaymentForm from "../components/PaymentForm";
 import Button from "../components/Button";
+import OrderSummary from "../components/OrderSummary";
 
 /**
  * Checkout Page
@@ -196,49 +197,12 @@ const Checkout = () => {
           </div>
 
           {/* Order Summary */}
-          <div className='card p-6'>
-            <h2 className='text-lg font-semibold mb-4'>Order Summary</h2>
-            <div className='space-y-4 mb-6'>
-              {cartItems?.map((item) => (
-                <div key={item.id} className='flex justify-between items-start'>
-                  <div className='flex-1'>
-                    <h4 className='font-medium'>{item.title}</h4>
-                    {item.type === "service" && item.serviceDetails && (
-                      <div className='text-sm text-subtle mt-1'>
-                        <p>📅 {new Date(item.serviceDetails.date).toLocaleDateString()}</p>
-                        <p>⏰ {item.serviceDetails.time}</p>
-                      </div>
-                    )}
-                    {item.type !== "service" && (
-                      <p className='text-sm text-subtle'>Qty: {item.quantity}</p>
-                    )}
-                  </div>
-                  <div className='text-right'>
-                    <p className='font-medium'>
-                      ₦{(item.price * (item.quantity || 1)).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className='border-t border-gray-200 dark:border-gray-700 pt-4'>
-              <div className='flex justify-between items-center mb-2'>
-                <span>Subtotal</span>
-                <span>₦{subtotal?.toLocaleString()}</span>
-              </div>
-              {discount > 0 && (
-                <div className='flex justify-between items-center mb-2 text-green-600'>
-                  <span>Discount</span>
-                  <span>-₦{discount?.toLocaleString()}</span>
-                </div>
-              )}
-              <div className='flex justify-between items-center text-lg font-bold'>
-                <span>Total</span>
-                <span>₦{total?.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
+          <OrderSummary
+            cartItems={cartItems}
+            subtotal={subtotal}
+            discount={discount}
+            total={total}
+          />
         </form>
       )}
     </section>
