@@ -8,6 +8,19 @@ import { Heart, ShoppingCart, Edit3 } from "lucide-react";
 import { useCart } from "../utils/useCart";
 
 import Button from "../components/Button";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
 
 /**
  * Cart Page
@@ -129,7 +142,14 @@ const Cart = () => {
 
   return (
     <section className='max-w-6xl mx-auto px-4 py-section'>
-      <h1 className='section-title mb-6'>Your Cart</h1>
+      <motion.h1
+        className='section-title mb-6'
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        viewport={{ once: true, amount: 0.3 }}>
+        Your Cart
+      </motion.h1>
 
       {isEmpty ? (
         <div className='card text-center flex flex-col items-center gap-4'>
@@ -177,16 +197,24 @@ const Cart = () => {
               </div>
             )}
 
-            {items.map((item) => (
-              <CartItem
-                key={item.id}
-                {...item}
-                onIncrease={() => handleIncrease(item.id)}
-                onDecrease={() => handleDecrease(item.id)}
-                onRemove={() => handleRemove(item.id)}
-                onEditBooking={() => handleEditBooking(item)}
-              />
-            ))}
+            <motion.div
+              variants={containerVariants}
+              initial='hidden'
+              whileInView='show'
+              viewport={{ once: true, amount: 0.2 }}
+              className='flex flex-col gap-6'>
+              {items.map((item) => (
+                <motion.div key={item.id} variants={itemVariants}>
+                  <CartItem
+                    {...item}
+                    onIncrease={() => handleIncrease(item.id)}
+                    onDecrease={() => handleDecrease(item.id)}
+                    onRemove={() => handleRemove(item.id)}
+                    onEditBooking={() => handleEditBooking(item)}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
 
           {/* === Cart Summary === */}

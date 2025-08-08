@@ -7,6 +7,19 @@ import { useProductFilters } from "../hooks/useProductFilters";
 import { useResponsivePagination } from "../hooks/useResponsivePagination";
 import { DUMMY_PRODUCTS } from "../constants";
 import { useCart } from "../utils/useCart";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
 
 /**
  * MiniMart page component.
@@ -55,7 +68,14 @@ const MiniMart = () => {
 
   return (
     <div className='max-w-7xl mx-auto px-gutter py-section'>
-      <h1 className='section-title mb-8'>Mini Mart</h1>
+      <motion.h1
+        className='section-title mb-8'
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        viewport={{ once: true, amount: 0.3 }}>
+        Mini Mart
+      </motion.h1>
 
       {/* Filter, Sort, and Search */}
       <div className='mb-8'>
@@ -88,16 +108,22 @@ const MiniMart = () => {
       {/* Products Grid */}
       {filteredProducts.length > 0 ? (
         <>
-          <div className='grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-6'>
+          <motion.div
+            className='grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-6'
+            variants={containerVariants}
+            initial='hidden'
+            whileInView='show'
+            viewport={{ once: true, amount: 0.2 }}>
             {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                {...product}
-                onViewDetails={() => handleViewDetails(product)}
-                onAddToCart={() => handleAddToCart(product)}
-              />
+              <motion.div key={product.id} variants={itemVariants}>
+                <ProductCard
+                  {...product}
+                  onViewDetails={() => handleViewDetails(product)}
+                  onAddToCart={() => handleAddToCart(product)}
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Pagination */}
           <div className='mt-8'>

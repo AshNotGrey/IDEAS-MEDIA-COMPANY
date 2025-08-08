@@ -8,6 +8,19 @@ import Pagination from "../components/Pagination";
 import { useProductFilters } from "../hooks/useProductFilters";
 import { useResponsivePagination } from "../hooks/useResponsivePagination";
 import { DUMMY_PRODUCTS } from "../constants";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
 
 /**
  * EquipmentRentals page component.
@@ -70,7 +83,14 @@ const EquipmentRentals = () => {
 
   return (
     <div className='max-w-7xl mx-auto px-gutter py-section'>
-      <h1 className='section-title mb-8'>Equipment Rentals</h1>
+      <motion.h1
+        className='section-title mb-8'
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        viewport={{ once: true, amount: 0.3 }}>
+        Equipment Rentals
+      </motion.h1>
 
       {/* Filter, Sort, and Search */}
       <div className='mb-8'>
@@ -106,17 +126,23 @@ const EquipmentRentals = () => {
         <div className='space-y-6'>
           {filteredProducts.length > 0 ? (
             <>
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6'>
+              <motion.div
+                className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6'
+                variants={containerVariants}
+                initial='hidden'
+                whileInView='show'
+                viewport={{ once: true, amount: 0.2 }}>
                 {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    {...product}
-                    onViewDetails={() => handleViewDetails(product)}
-                    onAddToCart={() => handleSelectEquipment(product)}
-                    isRental={true}
-                  />
+                  <motion.div key={product.id} variants={itemVariants}>
+                    <ProductCard
+                      {...product}
+                      onViewDetails={() => handleViewDetails(product)}
+                      onAddToCart={() => handleSelectEquipment(product)}
+                      isRental={true}
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
               {/* Pagination */}
               <Pagination

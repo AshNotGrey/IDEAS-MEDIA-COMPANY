@@ -8,6 +8,19 @@ import Pagination from "../components/Pagination";
 import { useServiceFilters } from "../hooks/useServiceFilters";
 import { useResponsivePagination } from "../hooks/useResponsivePagination";
 import { MAKEOVERS } from "../constants";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
 
 export default function MakeoverBooking() {
   const [selected, setSelected] = useState(null);
@@ -62,7 +75,14 @@ export default function MakeoverBooking() {
 
   return (
     <div className='max-w-7xl mx-auto px-gutter py-section'>
-      <h1 className='section-title mb-8'>Makeover Bookings</h1>
+      <motion.h1
+        className='section-title mb-8'
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        viewport={{ once: true, amount: 0.3 }}>
+        Makeover Bookings
+      </motion.h1>
 
       {/* Filter, Sort, and Search */}
       <div className='mb-8'>
@@ -98,16 +118,22 @@ export default function MakeoverBooking() {
         <div className='lg:col-span-2'>
           {filteredServices.length > 0 ? (
             <>
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6'>
+              <motion.div
+                className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6'
+                variants={containerVariants}
+                initial='hidden'
+                whileInView='show'
+                viewport={{ once: true, amount: 0.2 }}>
                 {filteredServices.map((item) => (
-                  <MakeoverCard
-                    key={item.id}
-                    service={item}
-                    onSelect={handleSelect}
-                    onViewDetails={handleViewDetails}
-                  />
+                  <motion.div key={item.id} variants={itemVariants}>
+                    <MakeoverCard
+                      service={item}
+                      onSelect={handleSelect}
+                      onViewDetails={handleViewDetails}
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
               {/* Pagination */}
               <div className='mt-8'>

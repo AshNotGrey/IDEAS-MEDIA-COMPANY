@@ -2,6 +2,19 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import { Calendar, Clock, MapPin, User, Phone, Mail } from "lucide-react";
 import formatPrice from "../utils/format";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
 
 /**
  * RentalBookingDetails Page
@@ -77,15 +90,34 @@ const RentalBookingDetails = () => {
   return (
     <section className='max-w-4xl mx-auto px-4 py-section'>
       <div className='mb-8'>
-        <h1 className='section-title mb-2'>Rental Booking Details</h1>
-        <p className='text-subtle'>Order #{booking.orderNumber}</p>
+        <motion.h1
+          className='section-title mb-2'
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }}>
+          Rental Booking Details
+        </motion.h1>
+        <motion.p
+          className='text-subtle'
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }}>
+          Order #{booking.orderNumber}
+        </motion.p>
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
         {/* Main Content */}
-        <div className='lg:col-span-2 space-y-6'>
+        <motion.div
+          className='lg:col-span-2 space-y-6'
+          variants={containerVariants}
+          initial='hidden'
+          whileInView='show'
+          viewport={{ once: true, amount: 0.2 }}>
           {/* Equipment Details */}
-          <div className='card'>
+          <motion.div className='card' variants={itemVariants}>
             <h2 className='text-xl font-semibold mb-4'>Equipment</h2>
             <div className='flex gap-4'>
               <img
@@ -106,10 +138,10 @@ const RentalBookingDetails = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Rental Period */}
-          <div className='card'>
+          <motion.div className='card' variants={itemVariants}>
             <h2 className='text-xl font-semibold mb-4'>Rental Period</h2>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div className='flex items-center gap-3'>
@@ -143,10 +175,10 @@ const RentalBookingDetails = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Pickup Location */}
-          <div className='card'>
+          <motion.div className='card' variants={itemVariants}>
             <h2 className='text-xl font-semibold mb-4'>Pickup Location</h2>
             <div className='flex items-start gap-3'>
               <MapPin className='w-5 h-5 text-ideas-accent mt-1' />
@@ -158,21 +190,26 @@ const RentalBookingDetails = () => {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Notes */}
           {booking.notes && (
-            <div className='card'>
+            <motion.div className='card' variants={itemVariants}>
               <h2 className='text-xl font-semibold mb-4'>Special Notes</h2>
               <p className='text-subtle'>{booking.notes}</p>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
 
         {/* Sidebar */}
-        <div className='space-y-6'>
+        <motion.div
+          className='space-y-6'
+          variants={containerVariants}
+          initial='hidden'
+          whileInView='show'
+          viewport={{ once: true, amount: 0.2 }}>
           {/* Customer Info */}
-          <div className='card'>
+          <motion.div className='card' variants={itemVariants}>
             <h2 className='text-lg font-semibold mb-4'>Customer Information</h2>
             <div className='space-y-3'>
               <div className='flex items-center gap-3'>
@@ -188,10 +225,10 @@ const RentalBookingDetails = () => {
                 <span className='text-sm'>{booking.customer.phone}</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Pricing */}
-          <div className='card'>
+          <motion.div className='card' variants={itemVariants}>
             <h2 className='text-lg font-semibold mb-4'>Pricing Summary</h2>
             <div className='space-y-2'>
               <div className='flex justify-between'>
@@ -215,10 +252,10 @@ const RentalBookingDetails = () => {
                 <span>{formatPrice(booking.pricing.total)}</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Actions */}
-          <div className='card'>
+          <motion.div className='card' variants={itemVariants}>
             <h2 className='text-lg font-semibold mb-4'>Actions</h2>
             <div className='space-y-3'>
               <button className='btn-primary w-full'>Download Receipt</button>
@@ -229,8 +266,8 @@ const RentalBookingDetails = () => {
                 </button>
               )}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );

@@ -6,6 +6,19 @@ import { useWishlist } from "../utils/useWishlist";
 import { useCart } from "../utils/useCart";
 
 import Button from "../components/Button";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
 
 /**
  * Wishlist Page
@@ -52,7 +65,14 @@ const Wishlist = () => {
   return (
     <section className='max-w-6xl mx-auto px-4 py-section'>
       <div className='flex justify-between items-center mb-6'>
-        <h1 className='section-title'>My Wishlist</h1>
+        <motion.h1
+          className='section-title'
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }}>
+          My Wishlist
+        </motion.h1>
         {!isEmpty && (
           <Button
             onClick={handleClearWishlist}
@@ -85,14 +105,22 @@ const Wishlist = () => {
       ) : (
         <div className='space-y-6'>
           {/* Wishlist Items */}
-          {items.map((item) => (
-            <WishlistItem
-              key={item.id}
-              {...item}
-              onMoveToCart={() => handleMoveToCart(item.id)}
-              onRemove={() => handleRemove(item.id)}
-            />
-          ))}
+          <motion.div
+            variants={containerVariants}
+            initial='hidden'
+            whileInView='show'
+            viewport={{ once: true, amount: 0.2 }}
+            className='space-y-6'>
+            {items.map((item) => (
+              <motion.div key={item.id} variants={itemVariants}>
+                <WishlistItem
+                  {...item}
+                  onMoveToCart={() => handleMoveToCart(item.id)}
+                  onRemove={() => handleRemove(item.id)}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
 
           {/* Summary */}
           <div className='card p-4 mt-6'>
