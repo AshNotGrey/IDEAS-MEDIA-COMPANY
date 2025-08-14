@@ -5,11 +5,22 @@ import HistoryFilters from "../components/HistoryFilters";
 import HistoryList from "../components/HistoryList";
 import { useHistory } from "../hooks/useHistory";
 import { formatCurrency } from "../utils/format";
-import { MOCK_HISTORY_ITEMS, calculateMockStats } from "../constants";
 
 /**
  * History page component.
  * Displays user's comprehensive history of rentals, bookings, and orders.
+ *
+ * Expected server data structure:
+ * - historyItems: Array of unified history items (filtered and processed)
+ * - allHistoryItems: Array of all history items (unfiltered)
+ * - stats: Object with aggregated statistics
+ *   - total: number
+ *   - byType: { rental, photoshoot, makeover, shop }
+ *   - byStatus: { completed, upcoming, cancelled, refunded }
+ *   - totalSpent: number
+ * - loading: boolean
+ * - error: Error object or null
+ * - filters: Current filter state
  *
  * @component
  * @returns {JSX.Element} The rendered History page.
@@ -19,9 +30,9 @@ const History = () => {
   const [groupBy, setGroupBy] = useState(null);
 
   const {
-    historyItems: realHistoryItems,
-    allHistoryItems: realAllHistoryItems,
-    stats: realStats,
+    historyItems,
+    allHistoryItems,
+    stats,
     loading,
     error,
     filters,
@@ -32,79 +43,10 @@ const History = () => {
     handleLeaveReview,
   } = useHistory();
 
-  // Use mock data when real data is not available or for development
-  const useMockData = !realAllHistoryItems || realAllHistoryItems.length === 0;
-
-  // Apply basic filtering to mock data (simplified version of historyMapper filtering)
-  const applyMockFilters = (items, currentFilters) => {
-    let filtered = [...items];
-
-    // Filter by search
-    if (currentFilters.search && currentFilters.search.trim()) {
-      const searchTerm = currentFilters.search.toLowerCase().trim();
-      filtered = filtered.filter(
-        (item) =>
-          item.title.toLowerCase().includes(searchTerm) ||
-          item.ref.toLowerCase().includes(searchTerm) ||
-          item.items.some((subItem) => subItem.name.toLowerCase().includes(searchTerm))
-      );
-    }
-
-    // Filter by type (handled by tab filtering)
-    // Filter by status
-    if (currentFilters.status && currentFilters.status !== "all") {
-      filtered = filtered.filter((item) => {
-        switch (currentFilters.status) {
-          case "completed":
-            return ["completed", "delivered", "returned"].includes(item.status);
-          case "upcoming":
-            return [
-              "confirmed",
-              "pending",
-              "processing",
-              "ready_for_pickup",
-              "in_progress",
-            ].includes(item.status);
-          case "cancelled":
-            return ["cancelled"].includes(item.status);
-          case "refunded":
-            return ["refunded"].includes(item.status);
-          default:
-            return item.status === currentFilters.status;
-        }
-      });
-    }
-
-    // Apply sorting
-    if (currentFilters.sortBy) {
-      filtered = [...filtered].sort((a, b) => {
-        switch (currentFilters.sortBy) {
-          case "oldest":
-            return new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt);
-          case "amount_high":
-            return (b.total || 0) - (a.total || 0);
-          case "amount_low":
-            return (a.total || 0) - (b.total || 0);
-          case "newest":
-          default:
-            return new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt);
-        }
-      });
-    }
-
-    return filtered;
-  };
-
-  const allHistoryItems = useMockData ? MOCK_HISTORY_ITEMS : realAllHistoryItems;
-  const historyItems = useMockData
-    ? applyMockFilters(MOCK_HISTORY_ITEMS, filters)
-    : realHistoryItems;
-  const stats = useMockData ? calculateMockStats(MOCK_HISTORY_ITEMS) : realStats;
-
   // Get items for current tab
   const getTabItems = () => {
-    if (activeTab === "all") return historyItems;
-    return historyItems.filter((item) => item.type === activeTab);
+    if (activeTab === "all") return historyItems || [];
+    return (historyItems || []).filter((item) => item.type === activeTab);
   };
 
   const tabItems = getTabItems();
@@ -115,7 +57,7 @@ const History = () => {
       id: "all",
       label: "All",
       icon: Package,
-      count: historyItems.length,
+      count: (historyItems || []).length,
       color: "text-gray-600",
       borderColor: "border-gray-400",
     },
@@ -215,12 +157,11 @@ const History = () => {
           viewport={{ once: true, amount: 0.3 }}>
           View and manage your past equipment rentals, photoshoot sessions, makeovers, and shop
           orders. Download receipts or book again with ease.
-          {/* change to use server side data */}
         </motion.p>
       </header>
 
       {/* Quick Stats */}
-      {stats && allHistoryItems.length > 0 && (
+      {stats && allHistoryItems && allHistoryItems.length > 0 && (
         <motion.div
           className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-8'
           initial={{ opacity: 0, y: 16 }}
@@ -316,11 +257,14 @@ const History = () => {
           </div>
 
           <div className='flex items-center gap-2'>
-            <label className='text-sm font-medium'>Group by:</label>
+            <Calendar className='w-4 h-4 text-ideas-accent' />
+            <label className='text-sm font-medium text-ideas-black dark:text-ideas-white'>
+              Group by:
+            </label>
             <select
               value={groupBy || ""}
               onChange={(e) => setGroupBy(e.target.value || null)}
-              className='input text-sm py-1'>
+              className='input text-sm py-1 border-2 border-ideas-accent/30 focus:border-ideas-accent focus:ring-2 focus:ring-ideas-accent/20 px-2'>
               <option value=''>None</option>
               <option value='month'>Month</option>
               <option value='week'>Week</option>

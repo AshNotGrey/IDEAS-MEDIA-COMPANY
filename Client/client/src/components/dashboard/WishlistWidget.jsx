@@ -13,7 +13,7 @@ import Button from "../Button";
  */
 const WishlistWidget = () => {
   const navigate = useNavigate();
-  const { items: wishlistItems, removeItem } = useWishlist();
+  const { items: wishlistItems, removeFromWishlist } = useWishlist();
   const { addItem: addToCart } = useCart();
 
   // Get first 3 items for preview
@@ -26,11 +26,11 @@ const WishlistWidget = () => {
       quantity: 1,
     };
     addToCart(cartItem);
-    removeItem(item.id);
+    removeFromWishlist(item.id);
   };
 
   const handleRemoveFromWishlist = (itemId) => {
-    removeItem(itemId);
+    removeFromWishlist(itemId);
   };
 
   return (
@@ -56,7 +56,7 @@ const WishlistWidget = () => {
         <div className='text-center py-8'>
           <Heart className='w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3' />
           <p className='text-subtle mb-4'>No items in wishlist</p>
-          <Button variant='primary' size='sm' onClick={() => navigate("/mini-mart")}>
+          <Button variant='text' size='sm' onClick={() => navigate("/mini-mart")}>
             Browse Products
           </Button>
         </div>
@@ -135,7 +135,7 @@ const WishlistWidget = () => {
                   addToCart(cartItem);
                 });
                 // Clear wishlist
-                wishlistItems.forEach((item) => removeItem(item.id));
+                wishlistItems.forEach((item) => removeFromWishlist(item.id));
                 navigate("/cart");
               }}>
               Move All to Cart

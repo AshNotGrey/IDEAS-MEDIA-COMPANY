@@ -32,7 +32,7 @@ const MONGODB_URI = required(process.env.MONGODB_URI, 'MONGODB_URI')
 
 const JWT_SECRET = required(process.env.JWT_SECRET, 'JWT_SECRET')
 const JWT_REFRESH_SECRET = required(process.env.JWT_REFRESH_SECRET, 'JWT_REFRESH_SECRET')
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30m'
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d'
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d'
 const BCRYPT_ROUNDS = toInt(process.env.BCRYPT_ROUNDS, 12)
 

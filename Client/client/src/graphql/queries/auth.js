@@ -64,6 +64,15 @@ export const SEND_EMAIL_VERIFICATION = gql`
   }
 `;
 
+export const SUBMIT_VERIFICATION_DOCUMENT = gql`
+  mutation SubmitVerificationDocument($input: VerificationDocumentInput!) {
+    submitVerificationDocument(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
 export const CHANGE_PASSWORD = gql`
   mutation ChangePassword($currentPassword: String!, $newPassword: String!) {
     changePassword(currentPassword: $currentPassword, newPassword: $newPassword)

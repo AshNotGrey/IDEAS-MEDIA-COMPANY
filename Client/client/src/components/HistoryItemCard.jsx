@@ -12,8 +12,9 @@ import {
   Package,
   Truck,
   CreditCard,
+  Eye,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import ReceiptButton from "./ReceiptButton";
 import RebookButton from "./RebookButton";
 import ReorderButton from "./ReorderButton";
@@ -52,15 +53,30 @@ const HistoryItemCard = ({
   const getTypeBorderColor = (type) => {
     switch (type) {
       case "rental":
-        return "border-ideas-accent";
+        return "border-l-2 border-l-ideas-accent dark:border-l-ideas-accent";
       case "makeover":
-        return "border-pink-500";
+        return "border-l-2 border-l-pink-500 dark:border-l-pink-400";
       case "photoshoot":
-        return "border-blue-500";
+        return "border-l-2 border-l-blue-500 dark:border-l-blue-400";
       case "shop":
-        return "border-green-500";
+        return "border-l-2 border-l-green-500 dark:border-l-green-400";
       default:
-        return "border-gray-300";
+        return "border-l-2 border-l-gray-300 dark:border-l-gray-600";
+    }
+  };
+
+  const getTypeIconBackground = (type) => {
+    switch (type) {
+      case "rental":
+        return "bg-gradient-to-br from-ideas-accent/20 to-ideas-accent/10";
+      case "makeover":
+        return "bg-gradient-to-br from-pink-500/20 to-pink-500/10";
+      case "photoshoot":
+        return "bg-gradient-to-br from-blue-500/20 to-blue-500/10";
+      case "shop":
+        return "bg-gradient-to-br from-green-500/20 to-green-500/10";
+      default:
+        return "bg-gradient-to-br from-gray-500/20 to-gray-500/10";
     }
   };
 
@@ -136,14 +152,12 @@ const HistoryItemCard = ({
   };
 
   return (
-    <motion.div
-      layout
-      className='bg-white dark:bg-ideas-darkInput border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-card dark:shadow-cardDark border-l-4 border-l-transparent hover:border-l-ideas-accent transition-all duration-200 hover:shadow-lg dark:hover:shadow-xl'>
+    <div
+      className={`bg-white dark:bg-ideas-darkInput border-2 border-gray-200 dark:border-gray-700 ${getTypeBorderColor(historyItem.type)} rounded-xl p-6 shadow-card dark:shadow-cardDark transition-all duration-200 hover:shadow-lg dark:hover:shadow-xl`}>
       {/* Main Card Content */}
       <div className='flex items-center gap-4'>
         {/* Type Icon */}
-        <div
-          className={`p-3 border-2 ${getTypeBorderColor(historyItem.type)} rounded-xl bg-white dark:bg-ideas-darkInput shadow-sm`}>
+        <div className={`p-3 rounded-xl shadow-sm ${getTypeIconBackground(historyItem.type)}`}>
           {getTypeIcon(historyItem.type)}
         </div>
 
@@ -214,12 +228,7 @@ const HistoryItemCard = ({
       {/* Expanded Details */}
       <AnimatePresence>
         {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className='border-t border-gray-200 dark:border-gray-700 mt-6 pt-6 space-y-6'>
+          <div className='border-t border-gray-200 dark:border-gray-700 mt-6 pt-6 space-y-6'>
             {/* Items List */}
             <div>
               <h4 className='font-semibold text-base text-ideas-black dark:text-ideas-white mb-3 flex items-center gap-2'>
@@ -396,10 +405,10 @@ const HistoryItemCard = ({
 
             {/* Secondary Actions */}
             <div className='flex flex-wrap gap-2'>{getSecondaryActions()}</div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };
 

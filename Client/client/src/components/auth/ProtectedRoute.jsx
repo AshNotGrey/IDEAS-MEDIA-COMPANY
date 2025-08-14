@@ -35,8 +35,11 @@ const ProtectedRoute = ({
   const location = useLocation();
 
   // Memoize route checking logic to prevent unnecessary recalculations
-  // Only checkout and account settings require email verification for enhanced security
-  const sensitiveRoutes = useMemo(() => ["/checkout", "/settings"], []);
+  // Sensitive routes that require both email and ID verification for enhanced security
+  const sensitiveRoutes = useMemo(
+    () => ["/checkout", "/settings", "/makeover", "/photoshoot", "/equipment"],
+    []
+  );
   const requiresVerification = useMemo(
     () => sensitiveRoutes.some((route) => location.pathname.startsWith(route)),
     [sensitiveRoutes, location.pathname]
@@ -88,6 +91,22 @@ const ProtectedRoute = ({
       return (
         <Navigate
           to='/email-verification-required'
+          state={{ from: location, requireVerification: true }}
+          replace
+        />
+      );
+    }
+
+    // Check if ID verification is required for sensitive routes
+    if (
+      requiresVerification &&
+      user &&
+      !user.isFullyVerified &&
+      location.pathname !== "/id-verification-required"
+    ) {
+      return (
+        <Navigate
+          to='/id-verification-required'
           state={{ from: location, requireVerification: true }}
           replace
         />

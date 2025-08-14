@@ -111,7 +111,7 @@ const UpcomingBookingsWidget = () => {
         <div className='text-center py-8'>
           <Calendar className='w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3' />
           <p className='text-subtle mb-4'>No upcoming bookings</p>
-          <Button variant='primary' size='sm' onClick={() => navigate("/photoshoot")}>
+          <Button variant='text' size='sm' onClick={() => navigate("/photoshoot")}>
             Book a Service
           </Button>
         </div>

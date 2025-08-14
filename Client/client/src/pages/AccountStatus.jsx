@@ -8,31 +8,31 @@ import Button from "../components/Button";
  */
 export const AccountDeactivated = () => {
   return (
-    <div className='min-h-screen flex items-center justify-center bg-ideas-white dark:bg-ideas-black px-4'>
-      <div className='max-w-md w-full bg-white dark:bg-ideas-gray-800 rounded-lg shadow-lg p-8 text-center'>
+    <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-ideas-lightInput via-ideas-white to-ideas-lightInput dark:from-ideas-darkInput dark:via-ideas-black dark:to-ideas-darkInput px-4'>
+      <div className='max-w-md w-full card bg-ideas-white dark:bg-ideas-black shadow-card dark:shadow-cardDark border border-gray-200/50 dark:border-gray-700/50 p-8 text-center'>
         <div className='flex justify-center mb-6'>
           <div className='w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center'>
             <AlertTriangle className='w-8 h-8 text-red-600 dark:text-red-400' />
           </div>
         </div>
 
-        <h1 className='text-2xl font-bold text-ideas-gray-900 dark:text-white mb-4'>
+        <h1 className='text-2xl font-heading font-bold text-ideas-black dark:text-ideas-white mb-4'>
           Account Deactivated
         </h1>
 
-        <p className='text-ideas-gray-600 dark:text-ideas-gray-400 mb-6'>
+        <p className='text-ideas-gray-600 dark:text-ideas-gray-400 mb-6 leading-relaxed'>
           Your account has been deactivated. Please contact our support team to reactivate your
           account.
         </p>
 
         <div className='space-y-4'>
-          <Button href='/contact' className='w-full'>
+          <Button href='/contact' variant='primary' className='w-full'>
             Contact Support
           </Button>
 
           <Link
             to='/'
-            className='inline-flex items-center text-ideas-blue hover:text-ideas-blue-dark transition-colors'>
+            className='inline-flex items-center text-ideas-accent hover:text-ideas-accentHover transition-colors duration-200'>
             <ArrowLeft className='w-4 h-4 mr-2' />
             Back to Home
           </Link>
@@ -47,31 +47,31 @@ export const AccountDeactivated = () => {
  */
 export const AccountLocked = () => {
   return (
-    <div className='min-h-screen flex items-center justify-center bg-ideas-white dark:bg-ideas-black px-4'>
-      <div className='max-w-md w-full bg-white dark:bg-ideas-gray-800 rounded-lg shadow-lg p-8 text-center'>
+    <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-ideas-lightInput via-ideas-white to-ideas-lightInput dark:from-ideas-darkInput dark:via-ideas-black dark:to-ideas-darkInput px-4'>
+      <div className='max-w-md w-full card bg-ideas-white dark:bg-ideas-black shadow-card dark:shadow-cardDark border border-gray-200/50 dark:border-gray-700/50 p-8 text-center'>
         <div className='flex justify-center mb-6'>
           <div className='w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center'>
             <Lock className='w-8 h-8 text-amber-600 dark:text-amber-400' />
           </div>
         </div>
 
-        <h1 className='text-2xl font-bold text-ideas-gray-900 dark:text-white mb-4'>
+        <h1 className='text-2xl font-heading font-bold text-ideas-black dark:text-ideas-white mb-4'>
           Account Temporarily Locked
         </h1>
 
-        <p className='text-ideas-gray-600 dark:text-ideas-gray-400 mb-6'>
+        <p className='text-ideas-gray-600 dark:text-ideas-gray-400 mb-6 leading-relaxed'>
           Your account has been temporarily locked due to multiple failed login attempts. Please try
           again later or reset your password.
         </p>
 
         <div className='space-y-4'>
-          <Button href='/forgot-password' className='w-full'>
+          <Button href='/forgot-password' variant='primary' className='w-full'>
             Reset Password
           </Button>
 
           <Link
             to='/'
-            className='inline-flex items-center text-ideas-blue hover:text-ideas-blue-dark transition-colors'>
+            className='inline-flex items-center text-ideas-accent hover:text-ideas-accentHover transition-colors duration-200'>
             <ArrowLeft className='w-4 h-4 mr-2' />
             Back to Home
           </Link>
@@ -86,31 +86,70 @@ export const AccountLocked = () => {
  */
 export const EmailVerificationRequired = () => {
   return (
-    <div className='min-h-screen flex items-center justify-center bg-ideas-white dark:bg-ideas-black px-4'>
-      <div className='max-w-md w-full bg-white dark:bg-ideas-gray-800 rounded-lg shadow-lg p-8 text-center'>
+    <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-ideas-lightInput via-ideas-white to-ideas-lightInput dark:from-ideas-darkInput dark:via-ideas-black dark:to-ideas-darkInput px-4'>
+      <div className='max-w-md w-full card bg-ideas-white dark:bg-ideas-black shadow-card dark:shadow-cardDark border border-gray-200/50 dark:border-gray-700/50 p-8 text-center'>
         <div className='flex justify-center mb-6'>
           <div className='w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center'>
             <Mail className='w-8 h-8 text-blue-600 dark:text-blue-400' />
           </div>
         </div>
 
-        <h1 className='text-2xl font-bold text-ideas-gray-900 dark:text-white mb-4'>
+        <h1 className='text-2xl font-heading font-bold text-ideas-black dark:text-ideas-white mb-4'>
           Email Verification Required
         </h1>
 
-        <p className='text-ideas-gray-600 dark:text-ideas-gray-400 mb-6'>
+        <p className='text-ideas-gray-600 dark:text-ideas-gray-400 mb-6 leading-relaxed'>
           Please verify your email address to access this feature. Check your inbox for a
           verification link.
         </p>
 
         <div className='space-y-4'>
-          <Button href='/email-verification' className='w-full'>
+          <Button href='/email-verification' variant='primary' className='w-full'>
             Verify Email
           </Button>
 
           <Link
             to='/dashboard'
-            className='inline-flex items-center text-ideas-blue hover:text-ideas-blue-dark transition-colors'>
+            className='inline-flex items-center text-ideas-accent hover:text-ideas-accentHover transition-colors duration-200'>
+            <ArrowLeft className='w-4 h-4 mr-2' />
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * ID Validation Required Page
+ */
+export const IDValidationRequired = () => {
+  return (
+    <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-ideas-lightInput via-ideas-white to-ideas-lightInput dark:from-ideas-darkInput dark:via-ideas-black dark:to-ideas-darkInput px-4'>
+      <div className='max-w-md w-full card bg-ideas-white dark:bg-ideas-black shadow-card dark:shadow-cardDark border border-gray-200/50 dark:border-gray-700/50 p-8 text-center'>
+        <div className='flex justify-center mb-6'>
+          <div className='w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center'>
+            <Lock className='w-8 h-8 text-purple-600 dark:text-purple-400' />
+          </div>
+        </div>
+
+        <h1 className='text-2xl font-heading font-bold text-ideas-black dark:text-ideas-white mb-4'>
+          ID Validation Required
+        </h1>
+
+        <p className='text-ideas-gray-600 dark:text-ideas-gray-400 mb-6 leading-relaxed'>
+          For security and compliance purposes, we need to verify your identity. Please submit your
+          ID for verification.
+        </p>
+
+        <div className='space-y-4'>
+          <Button href='/id-verification' variant='primary' className='w-full'>
+            Verify ID
+          </Button>
+
+          <Link
+            to='/dashboard'
+            className='inline-flex items-center text-ideas-accent hover:text-ideas-accentHover transition-colors duration-200'>
             <ArrowLeft className='w-4 h-4 mr-2' />
             Back to Dashboard
           </Link>

@@ -12,7 +12,6 @@ import { Check, AlertCircle } from "lucide-react";
 
 const AccountDashboard = () => {
   const { user, loading } = useAuth();
-
   if (loading) {
     return (
       <div className='max-w-6xl mx-auto px-4 py-12'>

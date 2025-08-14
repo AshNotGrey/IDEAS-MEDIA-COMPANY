@@ -14,7 +14,7 @@ import Button from "../Button";
 const CartWidget = () => {
   const navigate = useNavigate();
   const { items, removeItem, clearCart } = useCart();
-  const { itemCount, totalAmount } = useCartTotals();
+  const { itemCount, total } = useCartTotals();
 
   // Get first 2 items for preview
   const previewItems = items?.slice(0, 2) || [];
@@ -24,9 +24,8 @@ const CartWidget = () => {
   };
 
   const handleClearCart = () => {
-    if (window.confirm("Are you sure you want to clear your cart?")) {
-      clearCart();
-    }
+    // change to use toast later
+    clearCart();
   };
 
   return (
@@ -52,7 +51,7 @@ const CartWidget = () => {
         <div className='text-center py-8'>
           <ShoppingCart className='w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3' />
           <p className='text-subtle mb-4'>Your cart is empty</p>
-          <Button variant='primary' size='sm' onClick={() => navigate("/mini-mart")}>
+          <Button variant='text' size='sm' onClick={() => navigate("/mini-mart")}>
             Start Shopping
           </Button>
         </div>
@@ -82,7 +81,7 @@ const CartWidget = () => {
                       {item.type === "service" ? "Service" : `Qty: ${item.quantity}`}
                     </span>
                     <span className='text-sm font-medium text-gray-900 dark:text-white'>
-                      {formatPrice(item.price * (item.quantity || 1))}
+                      {formatPrice((item.price || 0) * (item.quantity || 1))}
                     </span>
                   </div>
                 </div>
@@ -112,7 +111,7 @@ const CartWidget = () => {
                 {itemCount} item{itemCount !== 1 ? "s" : ""}
               </span>
               <span className='text-lg font-bold text-gray-900 dark:text-white'>
-                {formatPrice(totalAmount)}
+                {formatPrice(total)}
               </span>
             </div>
           </div>
@@ -141,7 +140,7 @@ const CartWidget = () => {
                 size='sm'
                 onClick={handleClearCart}
                 className='text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20'>
-                Clear
+                <Trash2 className='w-4 h-4' />
               </Button>
             </div>
           </div>

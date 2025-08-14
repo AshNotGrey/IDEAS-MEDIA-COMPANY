@@ -10,6 +10,7 @@ import SignUp from "./components/auth/signUp";
 import ForgotPassword from "./components/auth/forgotPassword";
 import ResetPassword from "./components/auth/resetPassword";
 import EmailVerification from "./components/auth/emailVerification";
+import IDVerification from "./components/auth/idVerification";
 import EquipmentRentals from "./pages/EquipmentRentals";
 import MakeoverBookings from "./pages/MakeoverBookings";
 import PhotoshootBookings from "./pages/PhotoshootBookings";
@@ -34,6 +35,7 @@ import {
   AccountDeactivated,
   AccountLocked,
   EmailVerificationRequired,
+  IDValidationRequired,
 } from "./pages/AccountStatus";
 
 /**
@@ -122,6 +124,7 @@ const router = createBrowserRouter([
       { path: "/account-deactivated", element: <AccountDeactivated /> },
       { path: "/account-locked", element: <AccountLocked /> },
       { path: "/email-verification-required", element: <EmailVerificationRequired /> },
+      { path: "/id-verification-required", element: <IDValidationRequired /> },
 
       // 404 fallback
       { path: "*", element: <NotFound /> },
@@ -164,6 +167,9 @@ const router = createBrowserRouter([
 
   // Email verification can be accessed by authenticated users
   { path: "/email-verification", element: <EmailVerification /> },
+
+  // ID verification can be accessed by authenticated users
+  { path: "/id-verification", element: <IDVerification /> },
 ]);
 
 /**

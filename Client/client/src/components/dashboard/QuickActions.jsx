@@ -54,7 +54,7 @@ const QuickActions = () => {
           onClick={() => navigate(action.path)}
           className={`${action.color} text-white p-4 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ideas-accent group`}>
           <div className='flex flex-col items-center text-center space-y-2'>
-            <div className='p-2 bg-ideas-black rounded-lg group-hover:bg-white/30 transition-colors'>
+            <div className='p-2 bg-transparent rounded-lg group-hover:bg-white/30 transition-colors'>
               {action.icon}
             </div>
             <div>

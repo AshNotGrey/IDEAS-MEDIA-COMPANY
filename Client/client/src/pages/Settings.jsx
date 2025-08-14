@@ -342,6 +342,63 @@ const Settings = () => {
           )}
         </div>
 
+        {/* ID Verification Status */}
+        <div className='p-4 rounded-lg border border-gray-200 dark:border-gray-700'>
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-3'>
+              <Shield className='w-5 h-5 text-gray-600 dark:text-gray-400' />
+              <div>
+                <h4 className='font-medium'>ID Verification</h4>
+                <p className='text-sm text-gray-600 dark:text-gray-400'>
+                  Status:{" "}
+                  {user?.isFullyVerified ? (
+                    <span className='text-green-600 dark:text-green-400 font-medium'>
+                      Verified ✓
+                    </span>
+                  ) : user?.verificationStatus === "pending" ? (
+                    <span className='text-blue-600 dark:text-blue-400 font-medium'>
+                      Under Review
+                    </span>
+                  ) : user?.verificationStatus === "rejected" ? (
+                    <span className='text-red-600 dark:text-red-400 font-medium'>Rejected</span>
+                  ) : (
+                    <span className='text-yellow-600 dark:text-yellow-400 font-medium'>
+                      Not Verified
+                    </span>
+                  )}
+                </p>
+                {user?.verificationStatus === "rejected" &&
+                  user?.verification?.nin?.rejectionReason && (
+                    <p className='text-xs text-red-600 dark:text-red-400 mt-1'>
+                      Reason: {user.verification.nin.rejectionReason}
+                    </p>
+                  )}
+              </div>
+            </div>
+            {!user?.isFullyVerified && (
+              <Button
+                variant='secondary'
+                size='sm'
+                to='/id-verification'
+                className='text-decoration-none'>
+                {user?.verificationStatus === "pending" ? "View Status" : "Verify ID"}
+              </Button>
+            )}
+          </div>
+
+          {!user?.isFullyVerified && (
+            <div className='mt-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'>
+              <div className='flex items-center gap-2'>
+                <Shield className='w-4 h-4' />
+                <span className='text-sm'>
+                  Provide your NIN or Driver's License number for enhanced security and to access
+                  all features.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Change Password */}
         <div className='p-4 rounded-lg border border-gray-200 dark:border-gray-700'>
           <h4 className='font-medium mb-4'>Change Password</h4>

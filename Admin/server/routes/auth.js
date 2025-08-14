@@ -9,7 +9,7 @@ import { RateLimiterMemory } from 'rate-limiter-flexible';
 const generateToken = (admin, type = 'access') => {
     const payload = { adminId: admin._id, username: admin.username, role: admin.role, type, aud: 'admin', iss: 'ideal-photography' };
     const secret = type === 'refresh' ? JWT_REFRESH_SECRET : JWT_SECRET;
-    const expiresIn = type === 'refresh' ? (process.env.JWT_REFRESH_EXPIRES_IN || '7d') : (process.env.JWT_EXPIRES_IN || '30m');
+    const expiresIn = type === 'refresh' ? (process.env.JWT_REFRESH_EXPIRES_IN || '7d') : (process.env.JWT_EXPIRES_IN || '1d');
     return jwt.sign(payload, secret, { expiresIn });
 };
 
@@ -78,7 +78,7 @@ router.post('/login', rateLimit, async (req, res) => {
         await models.RefreshToken.create({ admin: admin._id, token: refreshToken, expiresAt, ...deviceMeta });
         const safeAdmin = admin.toObject();
         delete safeAdmin.password;
-        return res.json({ token, refreshToken, user: safeAdmin, expiresIn: process.env.JWT_EXPIRES_IN || '30m' });
+        return res.json({ token, refreshToken, user: safeAdmin, expiresIn: process.env.JWT_EXPIRES_IN || '1d' });
     } catch (err) {
         return res.status(500).json({ error: 'Login failed', message: err.message });
     }
@@ -88,35 +88,90 @@ router.post('/refresh', rateLimit, async (req, res) => {
     try {
         const token = req.headers['x-refresh-token'] || (req.body && req.body.refreshToken);
         if (!token) return res.status(400).json({ error: 'Refresh token is required' });
+
         const decoded = verifyRefreshToken(token);
+
+        // Additional validation for token type and audience
+        if (decoded.type !== 'refresh' || decoded.aud !== 'admin') {
+            return res.status(401).json({ error: 'Invalid token type' });
+        }
+
         // Ensure token exists and not revoked
         const stored = await models.RefreshToken.findOne({ token });
-        if (!stored || stored.revoked) return res.status(401).json({ error: 'Invalid refresh token' });
+        if (!stored || stored.revoked) {
+            if (stored && stored.revoked) {
+                console.warn(`Attempted use of revoked admin refresh token by ${decoded.adminId} from ${req.ip}`);
+            }
+            return res.status(401).json({ error: 'Invalid refresh token' });
+        }
+
+        // Check if stored token has expired
+        if (stored.expiresAt && stored.expiresAt < new Date()) {
+            stored.revoked = true;
+            stored.revokedReason = 'expired';
+            await stored.save();
+            return res.status(401).json({ error: 'Refresh token expired' });
+        }
+
         const adminId = decoded.adminId || decoded.userId;
         const admin = await models.Admin.findById(adminId).select('-password');
-        if (!admin || !['admin', 'manager', 'super_admin'].includes(admin.role)) return res.status(403).json({ error: 'Admin access required' });
+
+        if (!admin || !['admin', 'manager', 'super_admin'].includes(admin.role)) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
+        if (!admin.isActive || admin.isLocked || !admin.isVerified) {
+            return res.status(403).json({ error: 'Admin account not accessible' });
+        }
+
         const accessToken = generateToken(admin, 'access');
         // Rotate refresh token
         const newRefresh = generateToken(admin, 'refresh');
-        const newDecoded = jwt.decode(newRefresh);
-        const expiresAt = new Date(newDecoded.exp * 1000);
-        stored.revoked = true;
-        stored.replacedByToken = newRefresh;
-        stored.lastUsedAt = new Date();
-        await stored.save();
-        const deviceMeta = {
-            ip: req.ip,
-            userAgent: req.get('user-agent'),
-            deviceId: req.get('x-device-id') || stored.deviceId,
-            deviceName: req.get('x-device-name') || stored.deviceName,
-            platform: req.get('x-device-platform') || stored.platform,
-            browser: req.get('x-device-browser') || stored.browser,
-        };
-        await models.RefreshToken.create({ admin: admin._id, token: newRefresh, expiresAt, ...deviceMeta });
+
+        try {
+            const newDecoded = jwt.decode(newRefresh);
+            const expiresAt = new Date(newDecoded.exp * 1000);
+
+            // Mark old token as revoked
+            stored.revoked = true;
+            stored.replacedByToken = newRefresh;
+            stored.lastUsedAt = new Date();
+            stored.revokedReason = 'rotated';
+            await stored.save();
+
+            // Create new refresh token record
+            const deviceMeta = {
+                ip: req.ip,
+                userAgent: req.get('user-agent'),
+                deviceId: req.get('x-device-id') || stored.deviceId,
+                deviceName: req.get('x-device-name') || stored.deviceName,
+                platform: req.get('x-device-platform') || stored.platform,
+                browser: req.get('x-device-browser') || stored.browser,
+            };
+            await models.RefreshToken.create({ admin: admin._id, token: newRefresh, expiresAt, ...deviceMeta });
+
+            console.log(`Admin token refreshed for ${admin.username} (${admin._id}) from ${req.ip}`);
+        } catch (tokenError) {
+            console.error('Admin token rotation failed:', tokenError);
+            return res.status(500).json({ error: 'Token rotation failed' });
+        }
+
         const safeAdmin = admin.toObject();
         delete safeAdmin.password;
-        return res.json({ token: accessToken, refreshToken: newRefresh, user: safeAdmin, expiresIn: process.env.JWT_EXPIRES_IN || '30m' });
+        return res.json({
+            token: accessToken,
+            refreshToken: newRefresh,
+            user: safeAdmin,
+            expiresIn: process.env.JWT_EXPIRES_IN || '1d',
+            refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+        });
     } catch (err) {
+        console.error('Admin refresh token validation failed:', err.message);
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ error: 'Refresh token expired' });
+        } else if (err.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: 'Invalid refresh token format' });
+        }
         return res.status(401).json({ error: 'Invalid refresh token' });
     }
 });

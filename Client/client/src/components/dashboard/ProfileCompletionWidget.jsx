@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Mail, Phone, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
+import { User, Mail, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../Button";
@@ -30,23 +30,15 @@ const ProfileCompletionWidget = () => {
       required: true,
     },
     {
-      id: "phone",
-      label: "Phone Number",
-      icon: <Phone className='w-4 h-4' />,
-      completed: !!(user?.phone && user.phone.trim().length > 0),
-      required: true,
-    },
-    {
       id: "identity",
       label: "ID Verification",
       icon: <CreditCard className='w-4 h-4' />,
-      completed: !!(user?.ninVerified || user?.driversLicenseVerified),
-      required: false,
+      completed: !!user?.isFullyVerified,
+      required: true,
     },
   ];
 
   const completedCount = completionItems.filter((item) => item.completed).length;
-  const requiredCount = completionItems.filter((item) => item.required).length;
   const completionPercentage = Math.round((completedCount / completionItems.length) * 100);
   const isProfileComplete = completionItems
     .filter((item) => item.required)
@@ -122,7 +114,7 @@ const ProfileCompletionWidget = () => {
 
       {/* Action Button */}
       <div className='space-y-2'>
-        <Button variant='primary' size='md' fullWidth={true} onClick={() => navigate("/settings")}>
+        <Button variant='primary' size='sm' fullWidth={true} onClick={() => navigate("/settings")}>
           Complete Profile
         </Button>
 

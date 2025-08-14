@@ -88,19 +88,19 @@ const userResolvers = {
                 const token = jwt.sign(
                     { userId: user._id, aud: 'client', iss: 'ideal-photography', type: 'access' },
                     process.env.JWT_SECRET,
-                    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                    { expiresIn: process.env.JWT_EXPIRES_IN || '3d' }
                 );
                 const refreshToken = jwt.sign(
                     { userId: user._id, aud: 'client', iss: 'ideal-photography', type: 'refresh' },
                     process.env.JWT_REFRESH_SECRET,
-                    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
                 );
 
                 const response = {
                     token,
                     refreshToken,
                     user,
-                    expiresIn: process.env.JWT_EXPIRES_IN || '15m'
+                    expiresIn: process.env.JWT_EXPIRES_IN || '3d'
                 };
                 try { await context?.audit?.('Mutation.register', {}, { status: 'success' }); } catch (_) { }
                 return response;
@@ -148,19 +148,19 @@ const userResolvers = {
                 const token = jwt.sign(
                     { userId: user._id, aud: 'client', iss: 'ideal-photography', type: 'access' },
                     process.env.JWT_SECRET,
-                    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                    { expiresIn: process.env.JWT_EXPIRES_IN || '3d' }
                 );
                 const refreshToken = jwt.sign(
                     { userId: user._id, aud: 'client', iss: 'ideal-photography', type: 'refresh' },
                     process.env.JWT_REFRESH_SECRET,
-                    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
                 );
 
                 const response = {
                     token,
                     refreshToken,
                     user,
-                    expiresIn: process.env.JWT_EXPIRES_IN || '15m'
+                    expiresIn: process.env.JWT_EXPIRES_IN || '3d'
                 };
                 try { await context?.audit?.('Mutation.login', {}, { status: 'success' }); } catch (_) { }
                 return response;
@@ -195,18 +195,18 @@ const userResolvers = {
                 const accessToken = jwt.sign(
                     { userId: user._id, aud: 'client', iss: 'ideal-photography', type: 'access' },
                     process.env.JWT_SECRET,
-                    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                    { expiresIn: process.env.JWT_EXPIRES_IN || '3d' }
                 );
                 const refreshToken = jwt.sign(
                     { userId: user._id, aud: 'client', iss: 'ideal-photography', type: 'refresh' },
                     process.env.JWT_REFRESH_SECRET,
-                    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
                 );
                 const response = {
                     token: accessToken,
                     refreshToken,
                     user,
-                    expiresIn: process.env.JWT_EXPIRES_IN || '15m'
+                    expiresIn: process.env.JWT_EXPIRES_IN || '3d'
                 };
                 try { await context?.audit?.('Mutation.refreshToken', {}, { status: 'success' }); } catch (_) { }
                 return response;
@@ -347,18 +347,22 @@ const userResolvers = {
             try {
                 const updateData = {};
                 updateData[`verification.${input.type}.number`] = input.number;
-                updateData[`verification.${input.type}.document`] = input.document;
                 updateData[`verification.${input.type}.status`] = 'pending';
                 updateData[`verification.${input.type}.submittedAt`] = new Date();
+
+                // Only set document if provided
+                if (input.document) {
+                    updateData[`verification.${input.type}.document`] = input.document;
+                }
 
                 await models.User.findByIdAndUpdate(user._id, updateData);
 
                 return {
                     success: true,
-                    message: 'Verification document submitted successfully'
+                    message: 'ID verification submitted successfully'
                 };
             } catch (error) {
-                throw new Error('Failed to submit verification document');
+                throw new Error('Failed to submit ID verification');
             }
         }
     }

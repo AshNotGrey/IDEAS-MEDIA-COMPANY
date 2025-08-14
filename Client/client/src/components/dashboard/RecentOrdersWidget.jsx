@@ -1,7 +1,8 @@
 import React from "react";
-import { Package, Truck, CreditCard, Eye, DollarSign } from "lucide-react";
+import { Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "../../graphql/hooks/useOrders";
+import { useQuery } from "@apollo/client";
+import { GET_USER_ORDERS } from "../../graphql/queries/orders";
 import { useAuth } from "../../contexts/AuthContext";
 import formatPrice from "../../utils/format";
 import Button from "../Button";
@@ -9,38 +10,36 @@ import Button from "../Button";
 /**
  * RecentOrdersWidget Component
  *
- * Displays the last 5 orders with status and quick actions
+ * Displays the last 3 product orders with status - no actions
  */
 const RecentOrdersWidget = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Mock orders data - replace with actual useOrders hook when available
-  const orders = [
-    {
-      id: "ORD001",
-      status: "delivered",
-      totalAmount: 45000,
-      items: [{ title: "Professional Camera Lens", quantity: 1 }],
-      createdAt: "2024-01-15T10:30:00Z",
-      balanceAmount: 0,
+  // Fetch user orders using GraphQL
+  const {
+    data: ordersData,
+    loading,
+    error,
+  } = useQuery(GET_USER_ORDERS, {
+    variables: {
+      userId: user?.id,
+      filters: { limit: 5 },
     },
-    {
-      id: "ORD002",
-      status: "processing",
-      totalAmount: 25000,
-      items: [{ title: "Studio Lighting Kit", quantity: 2 }],
-      createdAt: "2024-01-14T15:20:00Z",
-      balanceAmount: 10000,
-    },
-  ];
+    skip: !user?.id,
+    fetchPolicy: "cache-and-network",
+  });
 
-  const loading = false;
-  const error = null;
+  // Extract orders from the response and filter for completed/purchased orders only
+  const allOrders = ordersData?.userOrders?.orders || [];
+  const productOrders = allOrders.filter(
+    (order) => order.orderType === "purchase" || order.orderType === "mini_mart_sale"
+  );
 
-  // Sort orders by date and take last 5
-  const recentOrders =
-    orders?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))?.slice(0, 5) || [];
+  // Sort orders by date and take last 3
+  const recentOrders = productOrders
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -53,13 +52,13 @@ const RecentOrdersWidget = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "delivered":
+      case "completed":
         return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20";
       case "processing":
         return "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20";
-      case "shipped":
+      case "ready_for_pickup":
         return "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20";
-      case "pending":
+      case "payment_pending":
         return "text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/20";
       case "cancelled":
         return "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20";
@@ -70,18 +69,13 @@ const RecentOrdersWidget = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "delivered":
+      case "completed":
         return <Package className='w-3 h-3' />;
-      case "shipped":
-        return <Truck className='w-3 h-3' />;
+      case "ready_for_pickup":
+        return <Package className='w-3 h-3' />;
       default:
         return <Package className='w-3 h-3' />;
     }
-  };
-
-  const handlePayBalance = (order) => {
-    // Navigate to payment with order context
-    navigate(`/checkout?orderId=${order.id}&type=order`);
   };
 
   if (loading) {
@@ -97,7 +91,7 @@ const RecentOrdersWidget = () => {
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className='animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg h-20'></div>
+              className='animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg h-16'></div>
           ))}
         </div>
       </div>
@@ -129,81 +123,61 @@ const RecentOrdersWidget = () => {
           </div>
           <h3 className='text-lg font-semibold'>Recent Orders</h3>
         </div>
-        <Button variant='text' size='sm' onClick={() => navigate("/account/orders")}>
-          View All
+        <Button variant='text' size='sm' onClick={() => navigate("/mini-mart")}>
+          Shop More
         </Button>
       </div>
 
       {recentOrders.length === 0 ? (
-        <div className='text-center py-8'>
-          <Package className='w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3' />
-          <p className='text-subtle mb-4'>No recent orders</p>
-          <Button variant='primary' size='sm' onClick={() => navigate("/mini-mart")}>
-            Shop Now
+        <div className='text-center py-6'>
+          <Package className='w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2' />
+          <p className='text-subtle text-sm'>No recent orders</p>
+          <p className='text-xs text-gray-500 dark:text-gray-400 mb-3'>
+            {productOrders.length === 0
+              ? "Start shopping to see your orders here"
+              : "No product orders found"}
+          </p>
+          <Button variant='text' size='sm' onClick={() => navigate("/mini-mart")}>
+            Browse products
           </Button>
         </div>
       ) : (
-        <div className='space-y-3'>
+        <div className='space-y-2'>
           {recentOrders.map((order) => (
             <div
-              key={order.id}
-              className='p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-ideas-accent/50 transition-colors'>
-              <div className='flex items-start justify-between mb-3'>
+              key={order._id}
+              className='p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-ideas-accent/30 transition-colors'>
+              <div className='flex items-start justify-between'>
                 <div className='flex-1 min-w-0'>
                   <div className='flex items-center gap-2 mb-1'>
-                    <h4 className='font-medium text-gray-900 dark:text-white'>Order #{order.id}</h4>
+                    <h4 className='font-medium text-gray-900 dark:text-white text-sm'>
+                      Order #{order.orderNumber}
+                    </h4>
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                       {getStatusIcon(order.status)}
-                      {order.status}
+                      {order.status.replace(/_/g, " ")}
                     </span>
                   </div>
-                  <p className='text-sm text-gray-600 dark:text-gray-300 truncate'>
-                    {order.items?.map((item) => `${item.title} (${item.quantity})`).join(", ")}
+                  <p className='text-xs text-gray-600 dark:text-gray-300 truncate'>
+                    {order.items
+                      ?.map((item) => `${item.productInfo?.name || "Product"} (${item.quantity})`)
+                      .join(", ")}
                   </p>
                   <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                    Ordered on {formatDate(order.createdAt)}
+                    {formatDate(order.createdAt)}
                   </p>
                 </div>
-                <div className='flex flex-col items-end gap-1'>
+                <div className='text-right'>
                   <span className='text-sm font-medium text-gray-900 dark:text-white'>
-                    {formatPrice(order.totalAmount)}
+                    {formatPrice(order.pricing?.total || 0)}
                   </span>
-                  {order.balanceAmount > 0 && (
-                    <span className='text-xs text-red-600 dark:text-red-400'>
-                      Balance: {formatPrice(order.balanceAmount)}
-                    </span>
+                  {order.pricing?.currency && order.pricing.currency !== "NGN" && (
+                    <p className='text-xs text-gray-500 dark:text-gray-400'>
+                      {order.pricing.currency}
+                    </p>
                   )}
                 </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className='flex items-center gap-2'>
-                <Button
-                  variant='text'
-                  size='sm'
-                  leftIcon={<Eye className='w-3 h-3' />}
-                  onClick={() => navigate(`/orders/${order.id}`)}>
-                  View
-                </Button>
-                {order.status === "processing" && (
-                  <Button
-                    variant='text'
-                    size='sm'
-                    leftIcon={<Truck className='w-3 h-3' />}
-                    onClick={() => navigate(`/orders/${order.id}/track`)}>
-                    Track
-                  </Button>
-                )}
-                {order.balanceAmount > 0 && (
-                  <Button
-                    variant='primary'
-                    size='sm'
-                    leftIcon={<CreditCard className='w-3 h-3' />}
-                    onClick={() => handlePayBalance(order)}>
-                    Pay Balance
-                  </Button>
-                )}
               </div>
             </div>
           ))}

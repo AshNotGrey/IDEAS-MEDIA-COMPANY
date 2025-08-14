@@ -1,4 +1,7 @@
-const formatPrice = (val) => `₦${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+const formatPrice = (val) => {
+    if (val === undefined || val === null || isNaN(val)) return '₦0.00';
+    return `₦${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+};
 
 export const formatCurrency = (amount, currency = 'NGN') => {
     if (typeof amount !== 'number') return '₦0.00';

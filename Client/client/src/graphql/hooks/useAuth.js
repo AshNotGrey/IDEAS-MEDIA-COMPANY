@@ -7,6 +7,7 @@ import {
     RESET_PASSWORD,
     VERIFY_EMAIL,
     SEND_EMAIL_VERIFICATION,
+    SUBMIT_VERIFICATION_DOCUMENT,
     CHANGE_PASSWORD,
     UPDATE_PROFILE,
     GET_CURRENT_USER
@@ -31,6 +32,7 @@ export const useAuth = () => {
     const [resetPasswordMutation] = useMutation(RESET_PASSWORD);
     const [verifyEmailMutation] = useMutation(VERIFY_EMAIL);
     const [sendEmailVerificationMutation] = useMutation(SEND_EMAIL_VERIFICATION);
+    const [submitVerificationDocumentMutation] = useMutation(SUBMIT_VERIFICATION_DOCUMENT);
     const [changePasswordMutation] = useMutation(CHANGE_PASSWORD);
     const [updateProfileMutation] = useMutation(UPDATE_PROFILE);
 
@@ -158,6 +160,24 @@ export const useAuth = () => {
         }
     };
 
+    const submitVerificationDocument = async (documentData) => {
+        try {
+            const { data } = await submitVerificationDocumentMutation({
+                variables: { input: documentData }
+            });
+
+            // Refetch user data to get updated verification status
+            await refetchUser();
+
+            return {
+                success: data.submitVerificationDocument.success,
+                message: data.submitVerificationDocument.message
+            };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    };
+
     const changePassword = async (passwordData) => {
         try {
             const { currentPassword, newPassword } = passwordData;
@@ -197,6 +217,7 @@ export const useAuth = () => {
         resetPassword,
         verifyEmail,
         sendEmailVerification,
+        submitVerificationDocument,
         changePassword,
         updateProfile,
         refetchUser

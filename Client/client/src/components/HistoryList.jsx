@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Loader, AlertCircle, Calendar, ShoppingBag } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { Loader, AlertCircle, Calendar } from "lucide-react";
 import HistoryItemCard from "./HistoryItemCard";
 import { groupHistoryByDate } from "../utils/historyMapper";
 import { formatGroupDate } from "../utils/format";
@@ -59,7 +59,7 @@ const HistoryList = ({
   // Error state
   if (error) {
     return (
-      <motion.div
+      <div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className='card border-red-200 bg-red-50'>
@@ -70,7 +70,7 @@ const HistoryList = ({
             <p className='text-red-600 text-sm'>{error}</p>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
@@ -87,7 +87,7 @@ const HistoryList = ({
     const emptyConfig = { ...defaultEmptyConfig, ...emptyStateConfig };
 
     return (
-      <motion.div
+      <div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className='text-center py-12 space-y-6'>
@@ -103,7 +103,7 @@ const HistoryList = ({
             {emptyConfig.actionText}
           </button>
         )}
-      </motion.div>
+      </div>
     );
   }
 
@@ -119,7 +119,7 @@ const HistoryList = ({
     return (
       <div className='space-y-8'>
         {sortedGroups.map(([groupKey, items]) => (
-          <motion.div
+          <div
             key={groupKey}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -135,7 +135,7 @@ const HistoryList = ({
             </div>
             <div className='space-y-4'>
               {items.map((item, index) => (
-                <motion.div
+                <div
                   key={item.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -147,10 +147,10 @@ const HistoryList = ({
                     onReorder={onReorder}
                     onLeaveReview={onLeaveReview}
                   />
-                </motion.div>
+                </div>
               ))}
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
     );
@@ -161,7 +161,7 @@ const HistoryList = ({
       <div className='space-y-4'>
         <AnimatePresence>
           {historyItems.slice(0, visibleItems).map((item, index) => (
-            <motion.div
+            <div
               key={item.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -174,7 +174,7 @@ const HistoryList = ({
                 onReorder={onReorder}
                 onLeaveReview={onLeaveReview}
               />
-            </motion.div>
+            </div>
           ))}
         </AnimatePresence>
       </div>

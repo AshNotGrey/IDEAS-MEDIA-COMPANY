@@ -161,7 +161,7 @@ export default gql`
   input VerificationDocumentInput {
     type: String! # "nin" or "driversLicense"
     number: String!
-    document: String! # File path/URL
+    document: String # File path/URL (optional)
   }
 
   input UserFilterInput {

@@ -8,6 +8,7 @@ export { default as SignUp } from '../../signUp';
 export { default as ForgotPassword } from '../../forgotPassword';
 export { default as ResetPassword } from '../../resetPassword';
 export { default as EmailVerification } from '../../emailVerification';
+export { default as IDVerification } from './idVerification';
 
 // Legal Pages
 export { default as Terms } from '../../terms';

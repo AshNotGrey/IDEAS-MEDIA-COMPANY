@@ -69,7 +69,7 @@ router.post('/register', rateLimit, async (req, res) => {
         } catch (_) { }
         const safeUser = user.toObject();
         delete safeUser.password;
-        return res.status(201).json({ token, refreshToken, user: safeUser, expiresIn: process.env.JWT_EXPIRES_IN || '15m' });
+        return res.status(201).json({ token, refreshToken, user: safeUser, expiresIn: process.env.JWT_EXPIRES_IN || '3d' });
     } catch (err) {
         return res.status(500).json({ error: 'Registration failed', message: err.message });
     }
@@ -108,7 +108,7 @@ router.post('/login', rateLimit, async (req, res) => {
         } catch (_) { }
         const safeUser = user.toObject();
         delete safeUser.password;
-        return res.json({ token, refreshToken, user: safeUser, expiresIn: process.env.JWT_EXPIRES_IN || '15m' });
+        return res.json({ token, refreshToken, user: safeUser, expiresIn: process.env.JWT_EXPIRES_IN || '3d' });
     } catch (err) {
         return res.status(500).json({ error: 'Login failed', message: err.message });
     }
@@ -120,25 +120,46 @@ router.post('/refresh', rateLimit, async (req, res) => {
         const token = req.headers['x-refresh-token'] || (req.body && req.body.refreshToken);
         if (!token) return res.status(400).json({ error: 'Refresh token is required' });
 
-        // Verify structurally
+        // Verify structurally and check expiration
         const decoded = verifyRefreshToken(token);
 
+        // Additional validation for token type and audience
+        if (decoded.type !== 'refresh' || decoded.aud !== 'client') {
+            return res.status(401).json({ error: 'Invalid token type' });
+        }
+
         const user = await models.User.findById(decoded.userId).select('-password');
-        if (!user || !user.isActive || user.isLocked) return res.status(403).json({ error: 'User not allowed' });
+        if (!user || !user.isActive || user.isLocked) {
+            return res.status(403).json({ error: 'User not allowed' });
+        }
 
         // Try persistent path first
         const stored = await models.RefreshToken.findOne({ token });
         if (stored && !stored.revoked) {
+            // Check if stored token has expired
+            if (stored.expiresAt && stored.expiresAt < new Date()) {
+                stored.revoked = true;
+                stored.revokedReason = 'expired';
+                await stored.save();
+                return res.status(401).json({ error: 'Refresh token expired' });
+            }
+
             const accessToken = generateToken(user, 'access');
             // Rotate refresh token
             const newRefresh = generateToken(user, 'refresh');
+
             try {
                 const newDecoded = jwt.decode(newRefresh);
                 const expiresAt = new Date(newDecoded.exp * 1000);
+
+                // Mark old token as revoked
                 stored.revoked = true;
                 stored.replacedByToken = newRefresh;
                 stored.lastUsedAt = new Date();
+                stored.revokedReason = 'rotated';
                 await stored.save();
+
+                // Create new refresh token record
                 const deviceMeta = {
                     ip: req.ip,
                     userAgent: req.get('user-agent'),
@@ -148,18 +169,48 @@ router.post('/refresh', rateLimit, async (req, res) => {
                     browser: req.get('x-device-browser') || stored.browser,
                 };
                 await models.RefreshToken.create({ user: user._id, token: newRefresh, expiresAt, ...deviceMeta });
-            } catch (_) { }
+
+                console.log(`Token refreshed for user ${user._id} from ${req.ip}`);
+            } catch (tokenError) {
+                console.error('Token rotation failed:', tokenError);
+                return res.status(500).json({ error: 'Token rotation failed' });
+            }
+
             const safeUser = user.toObject();
             delete safeUser.password;
-            return res.json({ token: accessToken, refreshToken: newRefresh, user: safeUser, expiresIn: process.env.JWT_EXPIRES_IN || '15m' });
+            return res.json({
+                token: accessToken,
+                refreshToken: newRefresh,
+                user: safeUser,
+                expiresIn: process.env.JWT_EXPIRES_IN || '3d',
+                refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d'
+            });
+        }
+
+        // If token not found in DB or already revoked
+        if (stored && stored.revoked) {
+            console.warn(`Attempted use of revoked refresh token by user ${decoded.userId} from ${req.ip}`);
+            return res.status(401).json({ error: 'Refresh token has been revoked' });
         }
 
         // Backward compatible: if not found in DB, still issue new access token only
+        console.warn(`Legacy refresh token used by user ${decoded.userId} from ${req.ip}`);
         const accessToken = generateToken(user, 'access');
         const safeUser = user.toObject();
         delete safeUser.password;
-        return res.json({ token: accessToken, user: safeUser, expiresIn: process.env.JWT_EXPIRES_IN || '15m', note: 'Legacy stateless refresh accepted; rotation not applied' });
+        return res.json({
+            token: accessToken,
+            user: safeUser,
+            expiresIn: process.env.JWT_EXPIRES_IN || '3d',
+            note: 'Legacy stateless refresh accepted; rotation not applied'
+        });
     } catch (err) {
+        console.error('Refresh token validation failed:', err.message);
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ error: 'Refresh token expired' });
+        } else if (err.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: 'Invalid refresh token format' });
+        }
         return res.status(401).json({ error: 'Invalid refresh token' });
     }
 });
