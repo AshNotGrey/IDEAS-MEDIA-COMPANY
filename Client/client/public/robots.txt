@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://ideamediacompany.com/sitemap.xml
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+
+# Allow important pages
+Allow: /
+Allow: /about
+Allow: /contact
+Allow: /login
+Allow: /register
+Allow: /forgot-password
+Allow: /reset-password
+Allow: /verify-email
+Allow: /account-status
+Allow: /account-settings
+Allow: /photoshoot
+Allow: /makeover
+Allow: /event
+Allow: /equipment

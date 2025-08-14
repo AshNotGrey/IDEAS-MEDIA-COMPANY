@@ -20,54 +20,189 @@
 
             .card {
                 max-width: 520px;
-                padding: 24px;
+                padding: 32px;
                 background: #0A0A0A;
-                border-radius: 12px;
+                border-radius: 16px;
                 border: 1px solid rgba(255, 255, 255, 0.08);
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+                text-align: center;
             }
 
             h1 {
-                margin: 0 0 8px;
-                font-size: 1.5rem;
+                margin: 0 0 16px;
+                font-size: 2rem;
+                font-weight: 700;
+                color: #FFFFFF;
             }
 
             p {
-                margin: 0 0 16px;
+                margin: 0 0 24px;
                 line-height: 1.6;
                 color: #cbd5e1;
+                font-size: 1.1rem;
             }
 
             .actions {
                 display: flex;
-                gap: 12px;
+                gap: 16px;
+                justify-content: center;
+                flex-wrap: wrap;
             }
 
             a.button {
                 background: #A24CF3;
                 color: #0D0D0D;
                 text-decoration: none;
-                padding: 10px 14px;
-                border-radius: 8px;
+                padding: 12px 24px;
+                border-radius: 12px;
                 font-weight: 600;
+                font-size: 1rem;
+                transition: all 0.2s ease-in-out;
+                border: 2px solid transparent;
+                display: inline-block;
+                min-width: 140px;
+            }
+
+            a.button:hover {
+                background: #C793FA;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(162, 76, 243, 0.3);
+            }
+
+            a.button:active {
+                transform: translateY(0);
             }
 
             a.secondary {
                 color: #C793FA;
+                text-decoration: none;
+                padding: 12px 24px;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 1rem;
+                transition: all 0.2s ease-in-out;
+                border: 2px solid rgba(199, 147, 250, 0.3);
+                background: transparent;
+                display: inline-block;
+                min-width: 140px;
+            }
+
+            a.secondary:hover {
+                background: rgba(199, 147, 250, 0.1);
+                border-color: #C793FA;
+                transform: translateY(-2px);
+            }
+
+            a.secondary:active {
+                transform: translateY(0);
+            }
+
+            .refresh-btn {
+                background: #1a1a1a;
+                color: #FFFFFF;
+                text-decoration: none;
+                padding: 12px 24px;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 1rem;
+                transition: all 0.2s ease-in-out;
+                border: 2px solid rgba(255, 255, 255, 0.1);
+                display: inline-block;
+                min-width: 140px;
+                cursor: pointer;
+            }
+
+            .refresh-btn:hover {
+                background: #2a2a2a;
+                border-color: rgba(255, 255, 255, 0.2);
+                transform: translateY(-2px);
+            }
+
+            .refresh-btn:active {
+                transform: translateY(0);
+            }
+
+            .icon {
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 24px;
+                background: linear-gradient(135deg, #A24CF3, #C793FA);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+            }
+
+            .icon::before {
+                content: "📶";
+                font-size: 32px;
+                margin: 0 auto;
+            }
+
+            @media (max-width: 640px) {
+                .card {
+                    margin: 20px;
+                    padding: 24px;
+                }
+
+                .actions {
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                a.button,
+                a.secondary,
+                .refresh-btn {
+                    width: 100%;
+                    max-width: 280px;
+                }
             }
         </style>
     </head>
 
     <body>
         <div class="card">
+            <div class="icon"></div>
             <h1>You're offline</h1>
             <p>It looks like you lost your internet connection. You can keep browsing cached pages. We'll automatically update when you're back
                 online.</p>
             <div class="actions">
                 <a class="button" href="/">Go to Home</a>
+                <button class="refresh-btn" onclick="refreshPage()">Refresh Page</button>
                 <a class="secondary" href="/">Try again</a>
             </div>
         </div>
+
+        <script>
+            function refreshPage() {
+                // Try to refresh the page
+                window.location.reload();
+            }
+
+            // Auto-refresh when connection is restored
+            window.addEventListener('online', function () {
+                // Show a brief message that connection is restored
+                const card = document.querySelector('.card');
+                const originalContent = card.innerHTML;
+
+                card.innerHTML = `
+                    <div class="icon"></div>
+                    <h1>Connection Restored!</h1>
+                    <p>You're back online. Refreshing the page...</p>
+                `;
+
+                // Refresh after 2 seconds
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            });
+
+            // Check connection status periodically
+            setInterval(() => {
+                if (navigator.onLine) {
+                    window.location.reload();
+                }
+            }, 5000); // Check every 5 seconds
+        </script>
     </body>
 
 </html>

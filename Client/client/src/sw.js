@@ -1,4 +1,4 @@
-/* global self, clients */
+/* global clients */
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, setDefaultHandler } from 'workbox-routing';
 import { StaleWhileRevalidate, NetworkFirst, NetworkOnly } from 'workbox-strategies';
@@ -36,12 +36,14 @@ self.addEventListener('push', (event) => {
         const options = {
             body,
             data: { url },
-            icon: '/images/idealphotography-logo-main.jpg',
-            badge: '/images/idealphotography-logo-main.jpg',
+            icon: '/icons/icon-192x192.svg',
+            badge: '/icons/icon-72x72.svg',
             vibrate: [100, 50, 100]
         };
         event.waitUntil(self.registration.showNotification(title, options));
-    } catch (_) { /* ignore */ }
+    } catch (error) {
+        console.error('Push notification error:', error);
+    }
 });
 
 self.addEventListener('notificationclick', (event) => {
