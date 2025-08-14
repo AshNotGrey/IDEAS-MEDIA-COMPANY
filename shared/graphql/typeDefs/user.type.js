@@ -184,6 +184,7 @@ export default gql`
   # Response Types
   type AuthResponse {
     token: String!
+    refreshToken: String
     user: User!
     expiresIn: String!
   }
@@ -241,6 +242,8 @@ export default gql`
   type Mutation {
     # Authentication
     register(input: RegisterInput!): AuthResponse!
+    # Backward compatibility: alias for older clients
+    registerUser(input: RegisterInput!): AuthResponse!
     login(input: LoginInput!): AuthResponse!
     logout: Boolean!
     refreshToken: AuthResponse!

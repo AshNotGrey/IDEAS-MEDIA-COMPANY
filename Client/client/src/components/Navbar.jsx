@@ -13,14 +13,14 @@
  * @component
  */
 import { useEffect, useState, useRef } from "react";
-import { Menu, X, User, CalendarDays, Heart, LogOut, ShoppingCart } from "lucide-react";
+import { Menu, X, User, CalendarDays, Heart, LogOut, ShoppingCart, Settings } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import Button from "./Button.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
 import CartIcon from "./CartIcon.jsx";
 import NotificationIcon from "./NotificationIcon.jsx";
-import { useAuth } from "../graphql/hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 
 /**
  * Navigation link configuration
@@ -43,7 +43,13 @@ export default function Navbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
+
+  // Extract first name from user's full name
+  const getFirstName = () => {
+    if (!user?.name) return "";
+    return user.name.split(" ")[0];
+  };
 
   useEffect(() => {
     const closeOnEsc = (e) => e.key === "Escape" && setSidebarOpen(false);
@@ -115,7 +121,9 @@ export default function Navbar() {
                     className='flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-full'
                     onClick={() => setDropdownOpen((v) => !v)}>
                     <User className='w-4 h-4 sm:w-5 sm:h-5 text-ideas-accent' />
-                    <span className='hidden sm:inline text-ideas-accent'>Account</span>
+                    {getFirstName() && (
+                      <span className='hidden sm:inline text-ideas-accent'>{getFirstName()}</span>
+                    )}
                   </Button>
 
                   <AnimatePresence>
@@ -127,7 +135,7 @@ export default function Navbar() {
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}>
                         <Link
-                          to='/account'
+                          to='/dashboard'
                           className='flex items-center gap-2 px-3 sm:px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white w-full'>
                           <User className='w-4 h-4 text-ideas-accent' />
                           My Account
@@ -143,6 +151,12 @@ export default function Navbar() {
                           className='flex items-center gap-2 px-3 sm:px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white w-full'>
                           <Heart className='w-4 h-4 text-ideas-accent' />
                           Wishlist
+                        </Link>
+                        <Link
+                          to='/settings'
+                          className='flex items-center gap-2 px-3 sm:px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white w-full'>
+                          <Settings className='w-4 h-4 text-ideas-accent' />
+                          Settings
                         </Link>
                         <button
                           onClick={() => {
@@ -223,7 +237,7 @@ export default function Navbar() {
                   {isAuthenticated ? (
                     <>
                       <Link
-                        to='/account'
+                        to='/dashboard'
                         onClick={() => setSidebarOpen(false)}
                         className='flex items-center gap-2 text-base font-medium text-black dark:text-white hover:text-ideas-accent hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors'>
                         <User className='w-5 h-5 text-ideas-accent' />

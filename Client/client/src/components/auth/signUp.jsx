@@ -7,7 +7,7 @@ import AuthLayout from "./AuthLayout";
 import { FormInput, Checkbox } from "./FormInput";
 import Button from "../Button";
 import useTheme from "../../hooks/useTheme.js";
-import { useAuth } from "../../graphql/hooks/useAuth";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * Sign Up Page Component
@@ -64,7 +64,7 @@ const SignUp = () => {
       const result = await registerUser(userData);
 
       if (result.success) {
-        // TODO: Navigate to email verification or dashboard
+        // TODO: Navigate to email verification
         console.log("Sign up successful!", result.user);
         navigate("/email-verification");
       } else {

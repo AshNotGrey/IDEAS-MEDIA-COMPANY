@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="theme-color" content="#A24CF3" />
+        <title>Offline - IDEAS MEDIA COMPANY</title>
+        <style>
+            body {
+                font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+                margin: 0;
+                padding: 0;
+                background: #0D0D0D;
+                color: #FFFFFF;
+                display: grid;
+                place-items: center;
+                min-height: 100vh;
+            }
+
+            .card {
+                max-width: 520px;
+                padding: 24px;
+                background: #0A0A0A;
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            }
+
+            h1 {
+                margin: 0 0 8px;
+                font-size: 1.5rem;
+            }
+
+            p {
+                margin: 0 0 16px;
+                line-height: 1.6;
+                color: #cbd5e1;
+            }
+
+            .actions {
+                display: flex;
+                gap: 12px;
+            }
+
+            a.button {
+                background: #A24CF3;
+                color: #0D0D0D;
+                text-decoration: none;
+                padding: 10px 14px;
+                border-radius: 8px;
+                font-weight: 600;
+            }
+
+            a.secondary {
+                color: #C793FA;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="card">
+            <h1>You're offline</h1>
+            <p>It looks like you lost your internet connection. You can keep browsing cached pages. We'll automatically update when you're back
+                online.</p>
+            <div class="actions">
+                <a class="button" href="/">Go to Home</a>
+                <a class="secondary" href="/">Try again</a>
+            </div>
+        </div>
+    </body>
+
+</html>

@@ -8,6 +8,7 @@ import FormInput from "./FormInput";
 import Button from "../Button";
 import { Camera, Lock, CheckCircle } from "lucide-react";
 import useTheme from "../../hooks/useTheme.js";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * Reset Password Page Component
@@ -21,6 +22,7 @@ const ResetPassword = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const { resetPassword } = useAuth();
 
   // Use theme hook to ensure proper theme state initialization
   useTheme();
@@ -53,14 +55,10 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Implement actual password reset logic
-      console.log("Resetting password with token:", token);
-      console.log("New password:", data.password);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setIsSuccess(true);
+      const res = await resetPassword({ token, newPassword: data.password });
+      if (res.success) {
+        setIsSuccess(true);
+      }
     } catch (error) {
       console.error("Password reset error:", error);
       // Error will be handled by form validation or can be set as general error

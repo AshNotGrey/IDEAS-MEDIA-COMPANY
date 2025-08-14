@@ -1,5 +1,6 @@
 import express from 'express';
 import { models } from '@ideal-photography/shared/mongoDB/index.js';
+import { NODE_ENV, PACKAGE_VERSION, PAYSTACK_SECRET_KEY, CLOUDINARY_CLOUD_NAME, EMAILJS_SERVICE_ID } from '../config/env.js';
 
 const router = express.Router();
 
@@ -11,8 +12,8 @@ router.get('/', (req, res) => {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development',
-        version: process.env.npm_package_version || '1.0.0'
+        environment: NODE_ENV,
+        version: PACKAGE_VERSION
     });
 });
 
@@ -24,8 +25,8 @@ router.get('/detailed', async (req, res) => {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development',
-        version: process.env.npm_package_version || '1.0.0',
+        environment: NODE_ENV,
+        version: PACKAGE_VERSION,
         dependencies: {
             database: { status: 'unknown' },
             memory: {
@@ -51,20 +52,20 @@ router.get('/detailed', async (req, res) => {
         healthCheck.dependencies.database.error = error.message;
     }
 
-    // Check environment variables
-    const requiredEnvVars = [
-        'MONGODB_URI',
-        'JWT_SECRET'
-    ];
+    // Check critical configuration via centralized env
+    const requiredConfig = {
+        MONGODB_URI: process.env.MONGODB_URI, // populated by env loader
+        JWT_SECRET: process.env.JWT_SECRET,
+    };
 
     healthCheck.dependencies.environment = {
         status: 'healthy',
         missing: []
     };
 
-    for (const envVar of requiredEnvVars) {
-        if (!process.env[envVar]) {
-            healthCheck.dependencies.environment.missing.push(envVar);
+    for (const [key, value] of Object.entries(requiredConfig)) {
+        if (!value) {
+            healthCheck.dependencies.environment.missing.push(key);
             healthCheck.dependencies.environment.status = 'unhealthy';
             healthCheck.status = 'unhealthy';
         }
@@ -72,9 +73,9 @@ router.get('/detailed', async (req, res) => {
 
     // Check optional services
     healthCheck.dependencies.services = {
-        paystack: process.env.PAYSTACK_SECRET_KEY ? 'configured' : 'not_configured',
-        cloudinary: process.env.CLOUDINARY_CLOUD_NAME ? 'configured' : 'not_configured',
-        emailjs: process.env.EMAILJS_SERVICE_ID ? 'configured' : 'not_configured'
+        paystack: PAYSTACK_SECRET_KEY ? 'configured' : 'not_configured',
+        cloudinary: CLOUDINARY_CLOUD_NAME ? 'configured' : 'not_configured',
+        emailjs: EMAILJS_SERVICE_ID ? 'configured' : 'not_configured'
     };
 
     const statusCode = healthCheck.status === 'healthy' ? 200 : 503;

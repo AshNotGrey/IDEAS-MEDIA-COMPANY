@@ -70,6 +70,18 @@ const Button = React.forwardRef(
         "hover:bg-green-600",
         "focus:ring-green-400",
       ],
+      danger: [
+        "bg-red-500 text-white border border-red-600",
+        "hover:bg-red-600",
+        "focus:ring-red-400",
+        "shadow-md hover:shadow-lg",
+      ],
+      success: [
+        "bg-green-500 text-white border border-green-600",
+        "hover:bg-green-600",
+        "focus:ring-green-400",
+        "shadow-md hover:shadow-lg",
+      ],
     };
 
     const colorClasses = {
@@ -88,6 +100,8 @@ const Button = React.forwardRef(
       text: "",
       whatsapp:
         "transition-transform duration-300 ease-out hover:scale-105 hover:-translate-y-0.5 active:scale-95",
+      danger: "hover:bg-red-600 hover:text-white",
+      success: "hover:bg-green-600 hover:text-white",
     };
 
     const finalClass = [
@@ -161,8 +175,8 @@ const Button = React.forwardRef(
 Button.displayName = "Button";
 
 Button.propTypes = {
-  children: PropTypes.node.isRequired,
-  variant: PropTypes.oneOf(["primary", "secondary", "text", "whatsapp"]),
+  children: PropTypes.node,
+  variant: PropTypes.oneOf(["primary", "secondary", "text", "whatsapp", "danger", "success"]),
   size: PropTypes.oneOf(["sm", "md", "lg"]),
   fullWidth: PropTypes.bool,
   disabled: PropTypes.bool,

@@ -4,20 +4,33 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { config } from 'dotenv';
+import {
+    PORT,
+    NODE_ENV,
+    CLIENT_URL,
+    ADMIN_URL,
+    MONGODB_URI,
+    PACKAGE_VERSION,
+    JWT_SECRET,
+} from './config/env.js';
 import colors from 'colors';
 import mongoose from 'mongoose';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { errorMiddleware, notFoundMiddleware } from './middleware/error.js';
+import authRoutes from './routes/auth.js';
+import webhookRoutes from './routes/webhooks.js';
+import notificationsRoutes from './routes/notifications.js';
+import authMiddleware from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from correct file
-config({
-    path: path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}.local`)
-});
+// env is initialized by importing from ./config/env.js
 
 
-// Import shared package with Apollo Server v4 helpers
+// Import shared package with Apollo Server v5 helpers
 import {
     createApolloServer,
     applyApolloMiddleware,
@@ -31,9 +44,8 @@ import {
 } from '@ideal-photography/shared/mongoDB/index.js';
 
 const app = express();
-const PORT = parseInt(process.env.PORT) || 4001;
 
-// Security middleware
+// Security middleware (aligned more closely with client needs)
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -47,21 +59,85 @@ app.use(helmet({
 
 // CORS configuration for admin
 app.use(cors({
-    origin: [
-        process.env.ADMIN_URL || 'http://localhost:3001',
-        process.env.CLIENT_URL || 'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:3000'
-    ],
+    origin: function (origin, callback) {
+        const allowedOrigins = new Set([
+            ADMIN_URL || 'http://localhost:3003',
+            CLIENT_URL || 'http://localhost:3002',
+            'http://localhost:3001',
+            'http://localhost:3000',
+            'http://localhost:5173',
+            'http://localhost:5174',
+        ]);
+
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.has(origin)) return callback(null, true);
+
+        try {
+            const { hostname } = new URL(origin);
+            if (
+                hostname === 'localhost' ||
+                hostname === '127.0.0.1' ||
+                hostname === '::1' ||
+                hostname.startsWith('192.168.') ||
+                hostname.endsWith('.local')
+            ) {
+                return callback(null, true);
+            }
+        } catch (_) { }
+
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Logging middleware
-app.use(morgan('combined', {
-    skip: (req, res) => process.env.NODE_ENV === 'test'
-}));
+// Logging middleware (clean, colorized, and filtered)
+const methodColor = (method) => {
+    switch (method) {
+        case 'GET':
+            return colors.cyan(method);
+        case 'POST':
+            return colors.green(method);
+        case 'PUT':
+        case 'PATCH':
+            return colors.yellow(method);
+        case 'DELETE':
+            return colors.red(method);
+        default:
+            return colors.white(method);
+    }
+};
+
+const statusColor = (status) => {
+    if (status >= 500) return colors.red(status);
+    if (status >= 400) return colors.yellow(status);
+    if (status >= 300) return colors.cyan(status);
+    return colors.green(status);
+};
+
+const shouldSkipLogging = (req, res) => {
+    const pathToCheck = req.path || req.url || '';
+    if (NODE_ENV === 'test') return true;
+    if (req.method === 'OPTIONS') return true;
+    if (pathToCheck === '/favicon.ico') return true;
+    if (pathToCheck.startsWith('/api-docs') || pathToCheck.includes('swagger')) return true;
+    if (pathToCheck.startsWith('/health') || pathToCheck.startsWith('/status')) return true;
+    // In production, only log warnings/errors
+    if (NODE_ENV === 'production' && res.statusCode < 400) return true;
+    return false;
+};
+
+app.use(morgan((tokens, req, res) => {
+    const method = methodColor(tokens.method(req, res));
+    const url = tokens.url(req, res);
+    const status = Number(tokens.status(req, res)) || 0;
+    const coloredStatus = statusColor(status);
+    const responseTime = tokens['response-time'](req, res) || '0';
+    const length = tokens.res(req, res, 'content-length') || '0';
+    return `➡️  ${method} ${url} ${coloredStatus} ${responseTime} ms ${colors.gray(`${length}b`)}`;
+}, { skip: shouldSkipLogging }));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -70,6 +146,27 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Trust proxy
 app.set('trust proxy', 1);
 
+// Global rate limiter (exclude health/status)
+const globalLimiter = new RateLimiterMemory({
+    keyPrefix: 'admin_global',
+    points: 100,
+    duration: 900,
+});
+const globalRateLimit = async (req, res, next) => {
+    if (req.path.startsWith('/health') || req.path.startsWith('/status')) return next();
+    try {
+        await globalLimiter.consume(req.ip);
+        return next();
+    } catch (rej) {
+        return res.status(429).json({
+            error: 'Too Many Requests',
+            message: 'Rate limit exceeded. Please try again later.',
+            retryAfter: Math.round(rej.msBeforeNext / 1000) || 1
+        });
+    }
+};
+app.use(globalRateLimit);
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -77,8 +174,8 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         service: 'Ideal Photography Admin Server',
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development',
-        version: process.env.npm_package_version || '1.0.0'
+        environment: NODE_ENV,
+        version: PACKAGE_VERSION
     });
 });
 
@@ -89,7 +186,7 @@ app.get('/health/detailed', async (req, res) => {
         timestamp: new Date().toISOString(),
         service: 'Ideal Photography Admin Server',
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development',
+        environment: NODE_ENV,
         dependencies: {
             database: { status: 'unknown' }
         }
@@ -109,20 +206,23 @@ app.get('/health/detailed', async (req, res) => {
     res.status(statusCode).json(healthCheck);
 });
 
-// Authentication middleware (placeholder - implement your auth logic)
-const authenticateUser = (req, res, next) => {
-    // TODO: Implement JWT authentication similar to Client server
-    // For now, we'll just pass through
-    req.user = null;
-    req.isAuthenticated = false;
-    next();
-};
+// Remove placeholder auth; rely on shared GraphQL context auth verification
 
-// Apply authentication to GraphQL endpoint
-app.use('/graphql', authenticateUser);
+// OpenAPI docs
+app.get('/openapi.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+});
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Auth and webhook routes
+app.use('/api/auth/me', authMiddleware);
+app.use('/api/auth', authRoutes);
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Serve static files in production
-if (process.env.NODE_ENV === 'production') {
+if (NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/dist')));
 
     // Catch all handler for SPA
@@ -134,6 +234,10 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
+// Error handling and 404 (after routes)
+app.use(errorMiddleware);
+app.use('/api/*', notFoundMiddleware);
+
 // Start server function
 const startServer = async () => {
     try {
@@ -141,7 +245,7 @@ const startServer = async () => {
 
         // Connect to MongoDB
         console.log('📦 Connecting to MongoDB...'.yellow);
-        await connectDB(process.env.MONGODB_URI);
+        await connectDB(MONGODB_URI);
 
         // Initialize database
         console.log('🔧 Initializing database...'.yellow);
@@ -168,7 +272,7 @@ const startServer = async () => {
                     requestDidStart() {
                         return {
                             didResolveOperation(requestContext) {
-                                if (process.env.NODE_ENV === 'development') {
+                                if (NODE_ENV === 'development') {
                                     console.log(`Admin GraphQL Operation: ${requestContext.request.operationName}`.green);
                                 }
                             },
@@ -189,9 +293,28 @@ const startServer = async () => {
                     ...baseContext,
                     isAdminServer: true,
                     clientType: 'admin',
-                    version: process.env.npm_package_version || '1.0.0'
+                    version: PACKAGE_VERSION
                 };
-            }
+            },
+            cors: {
+                origin: function (origin, callback) {
+                    const allowedOrigins = new Set([
+                        ADMIN_URL || 'http://localhost:3003',
+                        'http://localhost:5173',
+                        'http://localhost:5174',
+                    ]);
+                    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+                    try {
+                        const { hostname } = new URL(origin);
+                        if (hostname === 'localhost' || hostname.startsWith('192.168.') || hostname.endsWith('.local')) {
+                            return callback(null, true);
+                        }
+                    } catch (_) { }
+                    return callback(new Error('Not allowed by CORS'));
+                },
+                credentials: true
+            },
+            path: '/admin-graphql'
         });
 
         // Start the server
@@ -200,11 +323,10 @@ const startServer = async () => {
             console.log('🎉 ADMIN SERVER READY!'.green.bold);
             console.log('='.repeat(50).green);
             console.log(`🌍 Server URL: http://localhost:${PORT}`.cyan);
-            console.log(`🚀 GraphQL URL: http://localhost:${PORT}/graphql`.cyan);
-            console.log(`📊 GraphQL Playground: http://localhost:${PORT}/graphql`.cyan);
+            console.log(`🚀 GraphQL URL: http://localhost:${PORT}/admin-graphql`.cyan);
             console.log(`🔍 Health Check: http://localhost:${PORT}/health`.cyan);
-            console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`.yellow);
-            console.log(`🔐 JWT Secret: ${process.env.JWT_SECRET ? '✅ Configured' : '❌ Missing'}`.yellow);
+            console.log(`📦 Environment: ${NODE_ENV}`.yellow);
+            console.log(`🔐 JWT Secret: ${JWT_SECRET ? '✅ Configured' : '❌ Missing'}`.yellow);
             console.log('='.repeat(50).green);
             console.log('\n📝 Admin logs will appear below:'.gray);
         });

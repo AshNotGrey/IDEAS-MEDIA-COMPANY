@@ -2,9 +2,34 @@ import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/clien
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 
+// Refresh flow for admin client
+const refreshAccessToken = async () => {
+    try {
+        const storedRefresh = localStorage.getItem('adminRefreshToken');
+        if (!storedRefresh) return null;
+        const response = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-refresh-token': storedRefresh
+            }
+        });
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (data && data.token) {
+            localStorage.setItem('adminToken', data.token);
+            if (data.refreshToken) localStorage.setItem('adminRefreshToken', data.refreshToken);
+            return data.token;
+        }
+        return null;
+    } catch (_) {
+        return null;
+    }
+};
+
 // HTTP link to your GraphQL server
 const httpLink = createHttpLink({
-    uri: import.meta.env.VITE_GRAPHQL_ENDPOINT || 'http://localhost:4001/graphql', // Different port for admin server
+    uri: import.meta.env.VITE_GRAPHQL_ENDPOINT || 'http://localhost:4001/admin-graphql', // Admin server GraphQL path
 });
 
 // Auth link to include JWT token in headers
@@ -22,9 +47,9 @@ const authLink = setContext((_, { headers }) => {
 });
 
 // Error link to handle GraphQL and network errors
-const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+const errorLink = onError(async ({ graphQLErrors, networkError, operation, forward }) => {
     if (graphQLErrors) {
-        graphQLErrors.forEach(({ message, locations, path }) => {
+        for (const { message, locations, path } of graphQLErrors) {
             console.error(
                 `GraphQL error: Message: ${message}, Location: ${locations}, Path: ${path}`
             );
@@ -33,19 +58,34 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
             if (message.includes('Authentication required') ||
                 message.includes('Invalid token') ||
                 message.includes('Admin access required')) {
+                const newToken = await refreshAccessToken();
+                if (newToken) {
+                    const oldHeaders = operation.getContext().headers || {};
+                    operation.setContext({ headers: { ...oldHeaders, authorization: `Bearer ${newToken}` } });
+                    return forward(operation);
+                }
                 localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminRefreshToken');
                 localStorage.removeItem('adminUser');
                 window.location.href = '/admin/signin';
             }
-        });
+        }
     }
 
     if (networkError) {
         console.error(`Network error: ${networkError}`);
 
         // Handle network errors (server down, etc.)
-        if (networkError.statusCode === 401 || networkError.statusCode === 403) {
+        const statusCode = networkError.statusCode || networkError.status;
+        if (statusCode === 401 || statusCode === 403) {
+            const newToken = await refreshAccessToken();
+            if (newToken) {
+                const oldHeaders = operation.getContext().headers || {};
+                operation.setContext({ headers: { ...oldHeaders, authorization: `Bearer ${newToken}` } });
+                return forward(operation);
+            }
             localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminRefreshToken');
             localStorage.removeItem('adminUser');
             window.location.href = '/admin/signin';
         }

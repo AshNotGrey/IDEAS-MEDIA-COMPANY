@@ -29,7 +29,7 @@ import Button from "./Button";
  * @param {boolean} props.loading - Loading state
  * @returns {JSX.Element} Rendered makeover card
  */
-const MakeoverCard = ({ service, onSelect, onViewDetails, loading }) => {
+const MakeoverCard = ({ service, onSelect, onViewDetails, loading = false }) => {
   if (loading) {
     return (
       <div className='card card-hover w-full'>
@@ -226,10 +226,6 @@ MakeoverCard.propTypes = {
   onSelect: PropTypes.func.isRequired,
   onViewDetails: PropTypes.func.isRequired,
   loading: PropTypes.bool,
-};
-
-MakeoverCard.defaultProps = {
-  loading: false,
 };
 
 export default MakeoverCard;

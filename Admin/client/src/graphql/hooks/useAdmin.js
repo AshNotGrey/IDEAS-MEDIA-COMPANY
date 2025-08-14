@@ -54,10 +54,11 @@ export const useAdminAuth = () => {
                 variables: { input: credentials }
             });
 
-            const { token: authToken, user: adminData } = data.adminLogin;
+            const { token: authToken, refreshToken, admin: adminData } = data.adminLogin;
 
             // Store in localStorage
             localStorage.setItem('adminToken', authToken);
+            if (refreshToken) localStorage.setItem('adminRefreshToken', refreshToken);
             localStorage.setItem('adminUser', JSON.stringify(adminData));
 
             // Update state
@@ -65,7 +66,7 @@ export const useAdminAuth = () => {
             setAdmin(adminData);
             setIsAuthenticated(true);
 
-            return { success: true, admin: adminData, token: authToken };
+            return { success: true, admin: adminData, token: authToken, refreshToken };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -73,6 +74,7 @@ export const useAdminAuth = () => {
 
     const logout = () => {
         localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminRefreshToken');
         localStorage.removeItem('adminUser');
         setToken(null);
         setAdmin(null);

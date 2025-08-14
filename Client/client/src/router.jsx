@@ -1,5 +1,7 @@
 import React from "react";
 import { Outlet, createBrowserRouter, RouterProvider } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute, { RequireAuth, RequireGuest } from "./components/auth/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -7,15 +9,14 @@ import SignIn from "./components/auth/signIn";
 import SignUp from "./components/auth/signUp";
 import ForgotPassword from "./components/auth/forgotPassword";
 import ResetPassword from "./components/auth/resetPassword";
+import EmailVerification from "./components/auth/emailVerification";
 import EquipmentRentals from "./pages/EquipmentRentals";
 import MakeoverBookings from "./pages/MakeoverBookings";
 import PhotoshootBookings from "./pages/PhotoshootBookings";
 import EventCoverage from "./pages/EventCoverage";
 import MiniMart from "./pages/MiniMart";
-import AccountDashboard from "./pages/AccountDashboard";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
-import PastRentalsBookings from "./pages/PastRentalsBookings";
 import ProductDetails from "./pages/ProductDetails";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
@@ -27,6 +28,13 @@ import Settings from "./pages/Settings";
 import RentalBookingDetails from "./pages/RentalBookingDetails";
 import Notifications from "./pages/Notifications";
 import Wishlist from "./pages/Wishlist";
+import Dashboard from "./pages/Dashboard";
+import History from "./pages/History";
+import {
+  AccountDeactivated,
+  AccountLocked,
+  EmailVerificationRequired,
+} from "./pages/AccountStatus";
 
 /**
  * Main site layout with Navbar, Footer, and routed content.
@@ -47,38 +55,125 @@ const router = createBrowserRouter([
   {
     element: <MainLayout />,
     children: [
+      // Public routes (no authentication required - fully browsable)
       { path: "/", element: <Home /> },
-      { path: "/equipment", element: <EquipmentRentals /> },
-      { path: "/makeover", element: <MakeoverBookings /> },
-      { path: "/photoshoot", element: <PhotoshootBookings /> },
-      { path: "/events", element: <EventCoverage /> },
-      { path: "/mini-mart", element: <MiniMart /> },
-      { path: "/account", element: <AccountDashboard /> },
-      { path: "/cart", element: <Cart /> },
-      { path: "/checkout", element: <Checkout /> },
-      { path: "/history", element: <PastRentalsBookings /> },
-      { path: "/product/:id", element: <ProductDetails /> },
       { path: "/about", element: <AboutUs /> },
       { path: "/contact", element: <ContactUs /> },
       { path: "/faqs", element: <FAQs /> },
       { path: "/privacy", element: <PrivacyPolicy /> },
       { path: "/terms", element: <TermsConditions /> },
-      { path: "/settings", element: <Settings /> },
-      { path: "/rental/:id", element: <RentalBookingDetails /> },
-      { path: "/notifications", element: <Notifications /> },
+      { path: "/product/:id", element: <ProductDetails /> },
+      { path: "/equipment", element: <EquipmentRentals /> },
+      { path: "/makeover", element: <MakeoverBookings /> },
+      { path: "/photoshoot", element: <PhotoshootBookings /> },
+      { path: "/events", element: <EventCoverage /> },
+      { path: "/mini-mart", element: <MiniMart /> },
+      { path: "/cart", element: <Cart /> },
+
+      // User account routes (authentication required for personalized features)
+      {
+        path: "/dashboard",
+        element: (
+          <RequireAuth>
+            <Dashboard />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/history",
+        element: (
+          <RequireAuth>
+            <History />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/settings",
+        element: (
+          <RequireAuth>
+            <Settings />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/notifications",
+        element: (
+          <RequireAuth>
+            <Notifications />
+          </RequireAuth>
+        ),
+      },
+
+      // Public shopping & booking routes (guests can browse, add to cart, view details)
       { path: "/wishlist", element: <Wishlist /> },
+      { path: "/rental/:id", element: <RentalBookingDetails /> },
+
+      // Checkout - only step requiring authentication
+      {
+        path: "/checkout",
+        element: (
+          <RequireAuth>
+            <Checkout />
+          </RequireAuth>
+        ),
+      },
+
+      // Account status pages
+      { path: "/account-deactivated", element: <AccountDeactivated /> },
+      { path: "/account-locked", element: <AccountLocked /> },
+      { path: "/email-verification-required", element: <EmailVerificationRequired /> },
+
+      // 404 fallback
       { path: "*", element: <NotFound /> },
     ],
   },
-  { path: "/signin", element: <SignIn /> },
-  { path: "/signup", element: <SignUp /> },
-  { path: "/forgot-password", element: <ForgotPassword /> },
-  { path: "/reset-password", element: <ResetPassword /> },
+
+  // Guest-only routes (redirect if authenticated)
+  {
+    path: "/signin",
+    element: (
+      <RequireGuest>
+        <SignIn />
+      </RequireGuest>
+    ),
+  },
+  {
+    path: "/signup",
+    element: (
+      <RequireGuest>
+        <SignUp />
+      </RequireGuest>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <RequireGuest>
+        <ForgotPassword />
+      </RequireGuest>
+    ),
+  },
+  {
+    path: "/reset-password",
+    element: (
+      <RequireGuest>
+        <ResetPassword />
+      </RequireGuest>
+    ),
+  },
+
+  // Email verification can be accessed by authenticated users
+  { path: "/email-verification", element: <EmailVerification /> },
 ]);
 
 /**
  * AppRouter provides the main router for the application.
+ * Wrapped with AuthProvider to provide global authentication state.
  */
 export default function AppRouter() {
-  return <RouterProvider router={router} future={{ v7_startTransition: true }} />;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} future={{ v7_startTransition: true }} />
+    </AuthProvider>
+  );
 }

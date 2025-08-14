@@ -1,18 +1,19 @@
 # ideal-photography-shared
 
-A comprehensive shared package for photography business applications with GraphQL and Mongoose integration. Perfect for building photography booking systems, gallery management, client portals, and admin panels.
+A comprehensive shared package for photography business applications with GraphQL (Apollo Server v5) and Mongoose integration. It powers bookings, rentals, mini‑mart sales, client galleries, notifications, campaigns, settings, and admin workflows.
 
 ## 🚀 Features
 
-- **Complete Photography Business Models**: User, Product, Service, Booking, Gallery, and Review entities
-- **GraphQL Integration**: Ready-to-use Apollo Server v4 typeDefs and resolvers
-- **MongoDB Integration**: Mongoose models with optimized indexes and relationships
-- **Authentication System**: JWT-based auth with role management (client/admin)
-- **Booking Management**: Complete booking workflow with status tracking
-- **Gallery System**: Public/private galleries with access codes and analytics
-- **Review System**: Multi-category ratings with moderation workflow
-- **Validation Utilities**: Comprehensive validation functions for forms and data
-- **Admin Operations**: Full admin management capabilities
+- **Domain Models**: `User`, `Product`, `Service`, `Booking`, `Order` (cart/checkout/payments), `Gallery`, `Review`, `Notification`, `Campaign`, `Settings`, `AuditLog`
+- **GraphQL Integration**: Apollo Server v5 helpers (`createApolloServer`, `applyApolloMiddleware`) with merged `typeDefs`/`resolvers`
+- **MongoDB Integration**: Mongoose models with indexes, virtuals, and rich methods
+- **Auth Context Helpers**: `requireAuth`, `requireAdmin`, role/permission checks (pluggable JWT verification placeholder)
+- **Orders & Cart**: Add/update/remove items, checkout, payment initiation/confirmation (Paystack placeholder), admin order ops
+- **Notifications**: Multi‑channel schema (in‑app/email/SMS/push) with analytics fields
+- **Campaigns**: Hero/banner/popup configs with targeting, schedule, and analytics
+- **Settings**: Strongly‑typed settings with validation and history tracking
+- **Audit Logs**: Structured action logging with expiry, severity, compliance flags
+- **Validation Utilities**: Common validators (when imported via `@ideal-photography/shared/validations/common.js`)
 
 ## 📦 Installation
 
@@ -22,20 +23,16 @@ npm install @ideal-photography/shared
 
 ## 🏗️ Quick Start
 
-### 1. Set up your server with Apollo Server v4
+### 1) Set up your server with Apollo Server v5
 
 ```js
-const express = require('express');
-const { createApolloServer, applyApolloMiddleware } = require('@ideal-photography/shared/graphql');
-const { mongoose } = require('@ideal-photography/shared/mongoDB');
+import express from 'express';
+import { createApolloServer, applyApolloMiddleware, connectDB } from '@ideal-photography/shared';
 
 const app = express();
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/ideal-photography', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+await connectDB(process.env.MONGODB_URI || 'mongodb://localhost:27017/ideal-photography');
 
 // Create Apollo Server instance
 const server = createApolloServer({
@@ -57,19 +54,18 @@ app.listen(4000, () => {
 });
 ```
 
-### 2. Alternative setup with manual configuration
+### 2) Alternative setup with manual configuration
 
 ```js
-const express = require('express');
-const { ApolloServer } = require('@apollo/server');
-const { expressMiddleware } = require('@apollo/server/express4');
-const { typeDefs, resolvers } = require('@ideal-photography/shared/graphql');
-const { mongoose } = require('@ideal-photography/shared/mongoDB');
+import express from 'express';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@as-integrations/express5';
+import { typeDefs, resolvers, connectDB } from '@ideal-photography/shared';
 
 const app = express();
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/ideal-photography');
+await connectDB(process.env.MONGODB_URI || 'mongodb://localhost:27017/ideal-photography');
 
 // Create Apollo Server
 const server = new ApolloServer({
@@ -93,10 +89,10 @@ app.listen(4000, () => {
 });
 ```
 
-### 3. Use models directly
+### 3) Use models directly
 
 ```js
-const { models } = require('@ideal-photography/shared/mongoDB');
+import { models } from '@ideal-photography/shared';
 
 // Create a user
 const user = await models.User.create({
@@ -121,15 +117,15 @@ const booking = await models.Booking.create({
 });
 ```
 
-### 4. Use validation utilities
+### 4) Use validation utilities
 
 ```js
-const { 
-  isEmail, 
-  isValidPrice, 
+import {
+  isEmail,
+  isValidPrice,
   isValidRating,
-  isValidBookingStatus 
-} = require('@ideal-photography/shared/validations/common');
+  isValidBookingStatus
+} from '@ideal-photography/shared/validations/common.js';
 
 // Validate user input
 if (!isEmail(email)) {
@@ -163,6 +159,11 @@ if (!isValidPrice(price)) {
 - **Features**: Location tracking, payment status, contact info, special requests
 - **Status Flow**: pending → confirmed → in_progress → completed/cancelled
 
+### Order Model
+- **Purpose**: Unified cart/checkout/order workflow for rentals, purchases, and bookings
+- **Features**: Item snapshotting, pricing breakdown, payment info (Paystack placeholder), fulfillment, analytics, internal notes
+- **Status Flow**: cart → checkout → payment_pending/confirmed → processing → ready_for_pickup/in_progress → completed/cancelled
+
 ### Gallery Model
 - **Purpose**: Photo galleries and client portfolios
 - **Features**: Public/private galleries, access codes, download controls, view tracking
@@ -173,48 +174,69 @@ if (!isValidPrice(price)) {
 - **Features**: Multi-category ratings, admin responses, helpful votes, approval workflow
 - **Categories**: communication, quality, professionalism, value, timeliness
 
+### Notification Model
+- **Purpose**: Multi‑channel messaging with tracking (in‑app/email/SMS/push)
+- **Features**: Targeting by users/roles/broadcast, delivery analytics, scheduling and recurrence
+
+### Campaign Model
+- **Purpose**: Configurable promos (hero carousel, banners, popups) with targeting and schedule
+- **Features**: CTA analytics, priority, theme overrides
+
+### Settings Model
+- **Purpose**: Centralized configuration with validation, history, UI hints, access levels
+
+### AuditLog Model
+- **Purpose**: High‑fidelity action logging with severity, risk, compliance flags and TTL expiry
+
 ## 🔧 GraphQL Operations
 
-### Available Queries
-- **Authentication**: login, register, forgot password, verify email
-- **Products**: get products, featured products, search products
-- **Services**: get services, featured services, services by category
-- **Bookings**: user bookings, availability check, booking details
-- **Galleries**: public galleries, featured galleries, client galleries
-- **Reviews**: public reviews, featured reviews, average rating
+### Available Queries (high level)
+- **Auth**: `me`, `users`, `user`, `userByEmail`, stats/queues
+- **Products/Services**: listings, featured, by category
+- **Bookings**: bookings, booking by id
+- **Orders**: `myCart`, `myOrders`, `orders`, `order`, `orderStats`, revenue series, overdue rentals
+- **Galleries**: public/featured/client galleries, by access code
+- **Reviews**: public/featured/client, averages
+- **Notifications**: user/admin listings, stats
+- **Campaigns**: active/scheduled, by placement/type
+- **Settings**: listings, by category, public
+- **Audit Logs**: listings, stats, resource history
 
-### Available Mutations
-- **Authentication**: register, login, logout, change password, update profile
-- **Bookings**: create, update, cancel booking
-- **Reviews**: create, update, mark helpful
-- **Admin**: user management, booking management, content moderation
+### Available Mutations (selected)
+- **Auth**: register, login, password/email flows, profile updates, admin user ops
+- **Orders (Cart/Checkout)**: addToCart, updateCartItem, removeFromCart, clearCart, proceedToCheckout, initiatePayment, confirmPayment
+- **Order Admin**: updateOrderStatus, assignOrder, addInternalNote, receipts, returns
+- **Content**: create/update/delete for Product/Service/Booking/Gallery/Review
+- **Notifications/Campaigns/Settings**: full CRUD and control actions
+- **Audit**: tagging/flags, export (placeholder)
 
 ## 📊 Database Indexes
 
 The models include optimized indexes for common queries:
 
-- **Product**: Text search on name, description, tags
-- **Service**: Text search on name, description, tags
-- **Booking**: Compound indexes on client+date, date+status, product
-- **Gallery**: Indexes on category+isPublic, client, isFeatured+isPublic
-- **Review**: Indexes on client, booking, rating+isApproved
+- **Product**: Text on name/description/tags; price/rental indexes; analytics
+- **Service**: Text on name/description/tags
+- **Booking**: client+date, date+status, product
+- **Order**: customer/status, orderNumber, orderType, payment.status, createdAt, fulfillment.scheduledDate
+- **Gallery**: category+isPublished, featured
+- **Review**: product/service, rating, createdAt
+- **Notification**: type/category/status, recipients, scheduling, analytics
+- **Campaign**: type/placement, status/active, schedule, priority
+- **AuditLog**: action/actor/target/severity/status, text index, TTL via `expiresAt`
+- **Settings**: keys/categories as defined in model
 
 ## 📝 Changelog
 
-### v1.2.7 (Latest)
-- **Fixed**: ES module import/export issues in GraphQL type definitions
-- **Fixed**: Missing `ProductType` enum in order type definitions
-- **Fixed**: CommonJS to ES module conversion for all type definition files
-- **Fixed**: Mongoose connection reference issues in server shutdown
-- **Improved**: GraphQL schema validation and error handling
-- **Added**: Proper ES module support for all shared components
+### v1.2.8 (Latest)
+- **Docs**: Updated README with Orders/Notifications/Campaigns/Settings/AuditLog coverage
+- **Docs**: Switched examples to ESM imports and simplified package entry points
+- **Docs**: Corrected license section to match repository license
 
-### v1.2.6
-- Initial release with complete photography business models
-- GraphQL integration with Apollo Server v4
-- MongoDB integration with Mongoose
-- Authentication and authorization system
-- Booking, gallery, and review management
+### v1.2.7
+- Fixed ES module import/export issues in GraphQL type definitions
+- Fixed missing enums in order type definitions
+- Improved schema validation and error handling
+- Added ES module support for all shared components
 
 ## 🛠️ Example Usage
 
@@ -282,13 +304,13 @@ const pendingReviews = await models.Review.find({ isApproved: false })
   .sort({ createdAt: -1 });
 ```
 
-## 🔒 Security Features
+## 🔒 Security Notes
 
-- **JWT Authentication** with automatic token refresh
-- **Role-based permissions** (client vs admin)
-- **Input validation** with comprehensive validation functions
-- **Password hashing** with bcrypt
-- **CORS protection** for cross-origin requests
+- **JWT Authentication** integration point provided; actual JWT verification is left to host app
+- **Role-based permissions** helpers for resolvers
+- **Password hashing** and account safety fields on `User`
+- **Input validation** utilities available in `validations/common.js`
+- **CORS/Helmet** should be configured in the host app
 
 ## 📈 Performance Optimizations
 
@@ -316,7 +338,7 @@ const server = new ApolloServer({
 server.applyMiddleware({ app });
 ```
 
-### After (v4)
+### After (v5)
 ```js
 const { createApolloServer, applyApolloMiddleware } = require('@ideal-photography/shared/graphql');
 
@@ -337,7 +359,7 @@ await applyApolloMiddleware(app, server);
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This package is provided under a proprietary license. See the [LICENSE](LICENSE) file for terms.
 
 ## 🆘 Support
 

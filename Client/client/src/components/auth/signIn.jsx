@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema } from "../../utils/validationSchemas";
 import AuthLayout from "./AuthLayout";
 import { FormInput, Checkbox } from "./FormInput";
 import Button from "../Button";
-import { useAuth } from "../../graphql/hooks/useAuth";
+import { useAuth } from "../../contexts/AuthContext";
 import useTheme from "../../hooks/useTheme.js";
 
 /**
@@ -17,6 +17,7 @@ import useTheme from "../../hooks/useTheme.js";
  */
 const SignIn = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState("");
@@ -47,9 +48,10 @@ const SignIn = () => {
       const result = await signIn(data.email, data.password, data.rememberMe);
 
       if (result.success) {
-        // Navigate to dashboard or home
+        // Navigate to intended destination or dashboard
+        const from = location.state?.from?.pathname || "/dashboard";
         console.log("Sign in successful!", result.user);
-        navigate("/dashboard");
+        navigate(from, { replace: true });
       } else {
         setGeneralError(result.error || "Invalid email or password");
       }

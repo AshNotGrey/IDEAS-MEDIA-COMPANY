@@ -4,6 +4,7 @@ import AuthLayout from "./AuthLayout";
 import Button from "../Button";
 import { Camera, Mail, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
 import useTheme from "../../hooks/useTheme.js";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * Email Verification Page Component
@@ -19,6 +20,7 @@ const EmailVerification = () => {
   const [verificationStatus, setVerificationStatus] = useState("pending"); // pending, success, error, expired
   const [isLoading, setIsLoading] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+  const { verifyEmail, sendEmailVerification } = useAuth();
 
   // Use theme hook to ensure proper theme state initialization
   useTheme();
@@ -44,23 +46,17 @@ const EmailVerification = () => {
   // Verify email on component mount if token is present
   useEffect(() => {
     if (token) {
-      verifyEmail();
+      doVerifyEmail();
     }
   }, [token]);
 
   // Verify email with token
-  const verifyEmail = async () => {
+  const doVerifyEmail = async () => {
     setIsLoading(true);
 
     try {
-      // TODO: Implement actual email verification logic
-      console.log("Verifying email with token:", token);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Simulate success (in real app, this would be based on API response)
-      setVerificationStatus("success");
+      const res = await verifyEmail(token);
+      setVerificationStatus(res.success ? "success" : "error");
     } catch (error) {
       console.error("Email verification error:", error);
       setVerificationStatus("error");
@@ -76,11 +72,7 @@ const EmailVerification = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Implement actual resend logic
-      console.log("Resending verification email to:", email);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await sendEmailVerification();
 
       setResendCountdown(60); // 60 second cooldown
     } catch (error) {

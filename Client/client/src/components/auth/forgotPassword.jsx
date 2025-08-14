@@ -8,6 +8,7 @@ import FormInput from "./FormInput";
 import Button from "../Button";
 import { Camera, Mail, ArrowLeft } from "lucide-react";
 import useTheme from "../../hooks/useTheme.js";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * Forgot Password Page Component
@@ -19,6 +20,7 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
+  const { forgotPassword } = useAuth();
 
   // Use theme hook to ensure proper theme state initialization
   useTheme();
@@ -50,14 +52,11 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Implement actual password reset logic
-      console.log("Sending reset email to:", data.email);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setSubmittedEmail(data.email);
-      setIsSubmitted(true);
+      const res = await forgotPassword(data.email);
+      if (res.success) {
+        setSubmittedEmail(data.email);
+        setIsSubmitted(true);
+      }
     } catch (error) {
       console.error("Password reset error:", error);
       // Error will be handled by the form validation

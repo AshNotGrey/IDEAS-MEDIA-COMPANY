@@ -4,7 +4,7 @@ import { USER_FULL_FRAGMENT } from '../fragments/user.js';
 // Authentication Queries
 export const GET_CURRENT_USER = gql`
   query GetCurrentUser {
-    currentUser {
+    currentUser: me {
       ...UserFull
     }
   }
@@ -14,8 +14,13 @@ export const GET_CURRENT_USER = gql`
 // Authentication Mutations
 export const REGISTER_USER = gql`
   mutation RegisterUser($input: RegisterInput!) {
-    registerUser(input: $input) {
-      ...UserFull
+    register(input: $input) {
+      token
+      refreshToken
+      user {
+        ...UserFull
+      }
+      expiresIn
     }
   }
   ${USER_FULL_FRAGMENT}
@@ -23,11 +28,13 @@ export const REGISTER_USER = gql`
 
 export const LOGIN_USER = gql`
   mutation LoginUser($input: LoginInput!) {
-    loginUser(input: $input) {
+    loginUser: login(input: $input) {
       token
+      refreshToken
       user {
         ...UserFull
       }
+      expiresIn
     }
   }
   ${USER_FULL_FRAGMENT}
@@ -35,42 +42,36 @@ export const LOGIN_USER = gql`
 
 export const FORGOT_PASSWORD = gql`
   mutation ForgotPassword($email: String!) {
-    forgotPassword(email: $email) {
-      message
-    }
+    forgotPassword(email: $email)
   }
 `;
 
 export const RESET_PASSWORD = gql`
-  mutation ResetPassword($input: ResetPasswordInput!) {
-    resetPassword(input: $input) {
-      message
-    }
+  mutation ResetPassword($token: String!, $newPassword: String!) {
+    resetPassword(token: $token, newPassword: $newPassword)
   }
 `;
 
 export const VERIFY_EMAIL = gql`
   mutation VerifyEmail($token: String!) {
-    verifyEmail(token: $token) {
-      message
-      user {
-        ...UserFull
-      }
-    }
+    verifyEmail(token: $token)
   }
-  ${USER_FULL_FRAGMENT}
+`;
+
+export const SEND_EMAIL_VERIFICATION = gql`
+  mutation SendEmailVerification {
+    sendEmailVerification
+  }
 `;
 
 export const CHANGE_PASSWORD = gql`
-  mutation ChangePassword($input: ChangePasswordInput!) {
-    changePassword(input: $input) {
-      message
-    }
+  mutation ChangePassword($currentPassword: String!, $newPassword: String!) {
+    changePassword(currentPassword: $currentPassword, newPassword: $newPassword)
   }
 `;
 
 export const UPDATE_PROFILE = gql`
-  mutation UpdateProfile($input: UpdateProfileInput!) {
+  mutation UpdateProfile($input: UpdateUserInput!) {
     updateProfile(input: $input) {
       ...UserFull
     }

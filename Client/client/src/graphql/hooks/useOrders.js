@@ -49,6 +49,11 @@ export const useCart = () => {
     // Helper functions
     const addToCart = async (item) => {
         try {
+            // Validate item parameter
+            if (!item) {
+                throw new Error('Item is required');
+            }
+
             // Transform frontend cart item to GraphQL input format
             const input = {
                 productId: item.productId || item.id,

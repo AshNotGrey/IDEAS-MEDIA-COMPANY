@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 
 // Import all models
 import User from './models/User.js';
+import Admin from './models/Admin.js';
+import AdminInvite from './models/AdminInvite.js';
+import RefreshToken from './models/RefreshToken.js';
 import Product from './models/Product.js';
 import Booking from './models/Booking.js';
 import Service from './models/Service.js';
@@ -10,8 +13,10 @@ import Review from './models/Review.js';
 import Campaign from './models/Campaign.js';
 import Notification from './models/Notification.js';
 import Order from './models/Order.js';
+import Transaction from './models/Transaction.js';
 import AuditLog from './models/AuditLog.js';
 import Settings from './models/Settings.js';
+import PushSubscription from './models/PushSubscription.js';
 
 // Database connection helper
 const connectDB = async (uri, options = {}) => {
@@ -57,6 +62,22 @@ const initializeDB = async () => {
         //     Settings.createIndexes()
         // ]);
 
+        // Seed first super admin if configured and none exists
+        const hasAnyAdmin = await Admin.countDocuments();
+        const defaultUser = process.env.DEFAULT_ADMIN_USER;
+        const defaultPass = process.env.DEFAULT_ADMIN_PASS;
+        if (!hasAnyAdmin && defaultUser && defaultPass) {
+            const admin = await Admin.create({
+                username: String(defaultUser).trim(),
+                password: String(defaultPass),
+                role: 'super_admin',
+                permissions: ['admins.manage'],
+                isVerified: true,
+                isActive: true
+            });
+            console.log(`✅ Seeded default super admin '${admin.username}'`);
+        }
+
         console.log('✅ Database initialized (indexes skipped for development)');
     } catch (error) {
         console.error('❌ Database initialization error:', error);
@@ -72,6 +93,9 @@ export {
 
 export const models = {
     User,
+    Admin,
+    AdminInvite,
+    RefreshToken,
     Product,
     Booking,
     Service,
@@ -80,8 +104,10 @@ export const models = {
     Campaign,
     Notification,
     Order,
+    Transaction,
     AuditLog,
     Settings,
+    PushSubscription,
 };
 
 // Convenience exports for common operations

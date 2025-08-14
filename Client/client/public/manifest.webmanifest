@@ -1,0 +1,16 @@
+{
+    "name": "IDEAS MEDIA COMPANY",
+    "short_name": "IDEAS",
+    "description": "IDEAS MEDIA COMPANY platform",
+    "theme_color": "#A24CF3",
+    "background_color": "#FFFFFF",
+    "display": "standalone",
+    "start_url": "/",
+    "lang": "en",
+    "icons": [
+        { "src": "/images/idealphotography-logo-main.jpg", "sizes": "192x192", "type": "image/jpeg" },
+        { "src": "/images/idealphotography-logo-main.jpg", "sizes": "512x512", "type": "image/jpeg" }
+    ]
+}
+
+

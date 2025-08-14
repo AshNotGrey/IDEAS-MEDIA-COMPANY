@@ -1,4 +1,5 @@
 import { utils } from '@ideal-photography/shared/mongoDB/index.js';
+import { NODE_ENV } from '../config/env.js';
 
 /**
  * Global error handling middleware
@@ -45,7 +46,7 @@ const errorMiddleware = (err, req, res, next) => {
     }
 
     // Don't expose internal errors in production
-    if (process.env.NODE_ENV === 'production' && status === 500) {
+    if (NODE_ENV === 'production' && status === 500) {
         message = 'Something went wrong! Please try again later.';
     }
 
@@ -74,7 +75,7 @@ const errorMiddleware = (err, req, res, next) => {
         error: code,
         message,
         timestamp: new Date().toISOString(),
-        ...(process.env.NODE_ENV === 'development' && {
+        ...(NODE_ENV === 'development' && {
             stack: err.stack,
             details: err
         })

@@ -184,3 +184,110 @@ export const INITIATE_PAYMENT = gql`
     }
   }
 `;
+
+// History Queries
+export const GET_USER_ORDERS = gql`
+  query GetUserOrders($userId: ID!, $filters: OrderFiltersInput) {
+    userOrders(userId: $userId, filters: $filters) {
+      _id
+      orderNumber
+      uuid
+      orderType
+      status
+      items {
+        _id
+        productInfo {
+          name
+          sku
+          type
+          category
+          images {
+            thumbnail
+          }
+        }
+        quantity
+        unitPrice
+        subtotal
+        rentalPeriod {
+          startDate
+          endDate
+          duration
+        }
+        serviceDetails {
+          date
+          time
+          duration
+          location {
+            type
+            address
+          }
+          specialRequests
+        }
+        status
+      }
+      pricing {
+        subtotal
+        discountTotal
+        total
+        currency
+      }
+      workflow {
+        placedAt
+        confirmedAt
+        completedAt
+        cancelledAt
+      }
+      payment {
+        method
+        status
+        paystack {
+          reference
+          paidAt
+        }
+      }
+      receipt {
+        generated
+        url
+      }
+      fulfillment {
+        method
+        location
+        scheduledDate
+        scheduledTime
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_USER_TRANSACTIONS = gql`
+  query GetUserTransactions($userId: ID!, $filters: TransactionFiltersInput) {
+    userTransactions(userId: $userId, filters: $filters) {
+      _id
+      reference
+      type
+      amount
+      currency
+      status
+      paidAt
+      order {
+        _id
+        orderNumber
+        orderType
+      }
+      booking {
+        _id
+        date
+        time
+        product {
+          _id
+          name
+          type
+        }
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;

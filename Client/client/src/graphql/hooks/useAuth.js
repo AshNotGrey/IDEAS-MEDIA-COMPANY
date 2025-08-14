@@ -6,6 +6,7 @@ import {
     FORGOT_PASSWORD,
     RESET_PASSWORD,
     VERIFY_EMAIL,
+    SEND_EMAIL_VERIFICATION,
     CHANGE_PASSWORD,
     UPDATE_PROFILE,
     GET_CURRENT_USER
@@ -29,6 +30,7 @@ export const useAuth = () => {
     const [forgotPasswordMutation] = useMutation(FORGOT_PASSWORD);
     const [resetPasswordMutation] = useMutation(RESET_PASSWORD);
     const [verifyEmailMutation] = useMutation(VERIFY_EMAIL);
+    const [sendEmailVerificationMutation] = useMutation(SEND_EMAIL_VERIFICATION);
     const [changePasswordMutation] = useMutation(CHANGE_PASSWORD);
     const [updateProfileMutation] = useMutation(UPDATE_PROFILE);
 
@@ -55,10 +57,23 @@ export const useAuth = () => {
 
     const register = async (userData) => {
         try {
-            const { data } = await registerMutation({
-                variables: { input: userData }
-            });
-            return { success: true, user: data.registerUser };
+            const input = {
+                ...userData,
+                // Map firstName + lastName to name if provided
+                name: userData.name || `${userData.firstName ?? ''} ${userData.lastName ?? ''}`.trim(),
+            };
+            delete input.firstName;
+            delete input.lastName;
+
+            const { data } = await registerMutation({ variables: { input } });
+            const { token: authToken, refreshToken, user: userDataOut } = data.register;
+            if (authToken) localStorage.setItem('token', authToken);
+            if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+            if (userDataOut) localStorage.setItem('user', JSON.stringify(userDataOut));
+            setToken(authToken || null);
+            setUser(userDataOut || null);
+            setIsAuthenticated(!!authToken);
+            return { success: true, user: userDataOut, token: authToken, refreshToken };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -70,10 +85,11 @@ export const useAuth = () => {
                 variables: { input: credentials }
             });
 
-            const { token: authToken, user: userData } = data.loginUser;
+            const { token: authToken, refreshToken, user: userData } = data.loginUser;
 
             // Store in localStorage
             localStorage.setItem('token', authToken);
+            if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
             localStorage.setItem('user', JSON.stringify(userData));
 
             // Update state
@@ -81,14 +97,22 @@ export const useAuth = () => {
             setUser(userData);
             setIsAuthenticated(true);
 
-            return { success: true, user: userData, token: authToken };
+            return { success: true, user: userData, token: authToken, refreshToken };
         } catch (error) {
             return { success: false, error: error.message };
         }
     };
 
+    // Backward compatible alias used by SignIn component
+    const signIn = async (email, password, rememberMe) => {
+        const result = await login({ email, password });
+        // Optionally persist longer if rememberMe provided; currently handled by JWT expiry
+        return result;
+    };
+
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         setToken(null);
         setUser(null);
@@ -108,10 +132,9 @@ export const useAuth = () => {
 
     const resetPassword = async (resetData) => {
         try {
-            const { data } = await resetPasswordMutation({
-                variables: { input: resetData }
-            });
-            return { success: true, message: data.resetPassword.message };
+            const { token: resetToken, newPassword } = resetData;
+            const { data } = await resetPasswordMutation({ variables: { token: resetToken, newPassword } });
+            return { success: !!data.resetPassword };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -119,10 +142,17 @@ export const useAuth = () => {
 
     const verifyEmail = async (verificationToken) => {
         try {
-            const { data } = await verifyEmailMutation({
-                variables: { token: verificationToken }
-            });
-            return { success: true, message: data.verifyEmail.message, user: data.verifyEmail.user };
+            const { data } = await verifyEmailMutation({ variables: { token: verificationToken } });
+            return { success: !!data.verifyEmail };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    };
+
+    const sendEmailVerification = async () => {
+        try {
+            const { data } = await sendEmailVerificationMutation();
+            return { success: !!data.sendEmailVerification };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -130,10 +160,9 @@ export const useAuth = () => {
 
     const changePassword = async (passwordData) => {
         try {
-            const { data } = await changePasswordMutation({
-                variables: { input: passwordData }
-            });
-            return { success: true, message: data.changePassword.message };
+            const { currentPassword, newPassword } = passwordData;
+            const { data } = await changePasswordMutation({ variables: { currentPassword, newPassword } });
+            return { success: !!data.changePassword };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -162,10 +191,12 @@ export const useAuth = () => {
         loading: loading || userLoading,
         register,
         login,
+        signIn,
         logout,
         forgotPassword,
         resetPassword,
         verifyEmail,
+        sendEmailVerification,
         changePassword,
         updateProfile,
         refetchUser

@@ -7,16 +7,26 @@ import { RateLimiterMemory } from 'rate-limiter-flexible';
 import colors from 'colors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { config } from 'dotenv';
+import {
+    PORT,
+    RATE_LIMIT_MAX_REQUESTS,
+    RATE_LIMIT_WINDOW_SECONDS,
+    NODE_ENV,
+    isDevelopment,
+    CLIENT_URL,
+    ADMIN_URL,
+    MONGODB_URI,
+    PACKAGE_VERSION,
+    JWT_SECRET,
+    PAYSTACK_SECRET_KEY,
+    CLOUDINARY_CLOUD_NAME,
+} from './config/env.js';
 import mongoose from 'mongoose';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from correct file
-config({
-    path: path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}.local`)
-});
+// env is initialized by importing from ./config/env.js
 
 // Import shared modules
 import {
@@ -26,7 +36,6 @@ import {
     utils
 } from '@ideal-photography/shared/mongoDB/index.js';
 
-import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 import {
     createApolloServer,
     applyApolloMiddleware,
@@ -42,16 +51,20 @@ import { errorMiddleware } from './middleware/error.js';
 import authRoutes from './routes/auth.js';
 import uploadRoutes from './routes/upload.js';
 import webhookRoutes from './routes/webhooks.js';
+import paymentsRoutes from './routes/payments.js';
 import healthRoutes from './routes/health.js';
+import notificationsRoutes from './routes/notifications.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
 
 const app = express();
-const PORT = parseInt(process.env.PORT) || 4000;
+// PORT is imported from env
 
 // Rate limiting
 const rateLimiter = new RateLimiterMemory({
     keyPrefix: 'middleware',
-    points: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-    duration: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900, // 15 minutes
+    points: RATE_LIMIT_MAX_REQUESTS,
+    duration: RATE_LIMIT_WINDOW_SECONDS,
 });
 
 const rateLimitMiddleware = async (req, res, next) => {
@@ -85,18 +98,42 @@ app.use(helmet({
 // CORS configuration
 const corsOptions = {
     origin: function (origin, callback) {
-        const allowedOrigins = [
-            process.env.CLIENT_URL || 'http://localhost:3000',
-            process.env.ADMIN_URL || 'http://localhost:3001',
-            'http://localhost:3000',
-            'http://localhost:3001'
-        ];
+        const allowedOrigins = new Set([
+            CLIENT_URL || 'http://localhost:3000',
+            ADMIN_URL || 'http://localhost:3001',
+            // Common Vite dev server ports
+            'http://localhost:5173',
+            'http://localhost:5174',
+        ]);
 
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
+        // Allow requests with no origin like curl/postman or same-origin
+        if (!origin) {
+            return callback(null, true);
         }
+
+        if (allowedOrigins.has(origin)) {
+            return callback(null, true);
+        }
+
+        // During development, allow any localhost or local network origins
+        if (isDevelopment) {
+            try {
+                const { hostname } = new URL(origin);
+                if (
+                    hostname === 'localhost' ||
+                    hostname === '127.0.0.1' ||
+                    hostname === '::1' ||
+                    hostname.startsWith('192.168.') ||
+                    hostname.endsWith('.local')
+                ) {
+                    return callback(null, true);
+                }
+            } catch (_) {
+                // fall through to rejection below
+            }
+        }
+
+        return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -107,9 +144,52 @@ app.use(cors(corsOptions));
 
 // General middleware
 app.use(compression());
-app.use(morgan('combined', {
-    skip: (req, res) => process.env.NODE_ENV === 'test'
-}));
+
+// Logging middleware (clean, colorized, and filtered)
+const methodColor = (method) => {
+    switch (method) {
+        case 'GET':
+            return colors.cyan(method);
+        case 'POST':
+            return colors.green(method);
+        case 'PUT':
+        case 'PATCH':
+            return colors.yellow(method);
+        case 'DELETE':
+            return colors.red(method);
+        default:
+            return colors.white(method);
+    }
+};
+
+const statusColor = (status) => {
+    if (status >= 500) return colors.red(status);
+    if (status >= 400) return colors.yellow(status);
+    if (status >= 300) return colors.cyan(status);
+    return colors.green(status);
+};
+
+const shouldSkipLogging = (req, res) => {
+    const pathToCheck = req.path || req.url || '';
+    if (NODE_ENV === 'test') return true;
+    if (req.method === 'OPTIONS') return true;
+    if (pathToCheck === '/favicon.ico') return true;
+    if (pathToCheck.startsWith('/api-docs') || pathToCheck.includes('swagger')) return true;
+    if (pathToCheck.startsWith('/health') || pathToCheck.startsWith('/status')) return true;
+    // In production, only log warnings/errors
+    if (!isDevelopment && res.statusCode < 400) return true;
+    return false;
+};
+
+app.use(morgan((tokens, req, res) => {
+    const method = methodColor(tokens.method(req, res));
+    const url = tokens.url(req, res);
+    const status = Number(tokens.status(req, res)) || 0;
+    const coloredStatus = statusColor(status);
+    const responseTime = tokens['response-time'](req, res) || '0';
+    const length = tokens.res(req, res, 'content-length') || '0';
+    return `➡️  ${method} ${url} ${coloredStatus} ${responseTime} ms ${colors.gray(`${length}b`)}`;
+}, { skip: shouldSkipLogging }));
 
 // Rate limiting (apply to all routes except health checks)
 app.use((req, res, next) => {
@@ -118,6 +198,9 @@ app.use((req, res, next) => {
     }
     return rateLimitMiddleware(req, res, next);
 });
+
+// Mount webhooks BEFORE JSON body parsing to preserve raw body for signature verification
+app.use('/api/webhooks', webhookRoutes);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -133,13 +216,21 @@ app.use(authMiddleware);
 app.use('/health', healthRoutes);
 app.use('/status', healthRoutes);
 
+// OpenAPI docs
+app.get('/openapi.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+});
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/webhooks', webhookRoutes);
+app.use('/api/payments', paymentsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Serve static files in production
-if (process.env.NODE_ENV === 'production') {
+if (NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/dist')));
 
     // Catch all handler for SPA
@@ -164,6 +255,12 @@ app.use('/api/*', (req, res) => {
     });
 });
 
+app.get('/', (req, res) => {
+    res.json({
+        message: 'Active Client Server'
+    });
+});
+
 // Database connection and server startup
 async function startServer() {
     try {
@@ -171,7 +268,7 @@ async function startServer() {
 
         // Connect to MongoDB
         console.log('📦 Connecting to MongoDB...'.yellow);
-        await connectDB(process.env.MONGODB_URI);
+        await connectDB(MONGODB_URI);
 
         // Initialize database
         console.log('🔧 Initializing database...'.yellow);
@@ -183,12 +280,11 @@ async function startServer() {
         const apolloServer = createApolloServer({
             context: ({ req, res }) => createContext({ req, res }),
             plugins: [
-                ApolloServerPluginLandingPageGraphQLPlayground(), // 👈 Add this line
                 {
                     requestDidStart() {
                         return {
                             didResolveOperation(requestContext) {
-                                if (process.env.NODE_ENV === 'development') {
+                                if (isDevelopment) {
                                     console.log(`GraphQL Operation: ${requestContext.request.operationName}`.green);
                                 }
                             },
@@ -210,7 +306,7 @@ async function startServer() {
                     ...createContext({ req, res }),
                     // Add any client-specific context
                     clientType: 'customer',
-                    version: process.env.npm_package_version || '1.0.0'
+                    version: PACKAGE_VERSION
                 };
             }
         });
@@ -222,12 +318,11 @@ async function startServer() {
             console.log('='.repeat(50).green);
             console.log(`🌍 Server URL: http://localhost:${PORT}`.cyan);
             console.log(`🚀 GraphQL URL: http://localhost:${PORT}/graphql`.cyan);
-            console.log(`📊 GraphQL Playground: http://localhost:${PORT}/graphql`.cyan);
             console.log(`🔍 Health Check: http://localhost:${PORT}/health`.cyan);
-            console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`.yellow);
-            console.log(`🔐 JWT Secret: ${process.env.JWT_SECRET ? '✅ Configured' : '❌ Missing'}`.yellow);
-            console.log(`💳 Paystack: ${process.env.PAYSTACK_SECRET_KEY ? '✅ Configured' : '❌ Missing'}`.yellow);
-            console.log(`☁️ Cloudinary: ${process.env.CLOUDINARY_CLOUD_NAME ? '✅ Configured' : '❌ Missing'}`.yellow);
+            console.log(`📦 Environment: ${NODE_ENV}`.yellow);
+            console.log(`🔐 JWT Secret: ${JWT_SECRET ? '✅ Configured' : '❌ Missing'}`.yellow);
+            console.log(`💳 Paystack: ${PAYSTACK_SECRET_KEY ? '✅ Configured' : '❌ Missing'}`.yellow);
+            console.log(`☁️ Cloudinary: ${CLOUDINARY_CLOUD_NAME ? '✅ Configured' : '❌ Missing'}`.yellow);
             console.log('='.repeat(50).green);
             console.log('\n📝 Logs will appear below:'.gray);
         });

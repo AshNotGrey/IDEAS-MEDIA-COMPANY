@@ -1,8 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Button from "../components/Button";
+
 /**
  * NotFound page component.
- * Renders a 404 error message and a link to return home.
+ * Renders a 404 error message and links to return home or browse equipment.
  *
  * @component
  * @returns {JSX.Element} The rendered NotFound page.
@@ -17,9 +19,18 @@ const NotFound = () => (
     <p className='mb-6 text-black/80 dark:text-white/80'>
       Sorry, the page you are looking for does not exist.
     </p>
-    <Link to='/' className='btn btn-primary'>
-      Go Home
-    </Link>
+    <div className='flex flex-col sm:flex-row gap-4'>
+      <Link to='/'>
+        <Button variant='primary' animated>
+          Go Home
+        </Button>
+      </Link>
+      <Link to='/equipment'>
+        <Button variant='secondary' animated>
+          Browse Equipment
+        </Button>
+      </Link>
+    </div>
   </div>
 );
 

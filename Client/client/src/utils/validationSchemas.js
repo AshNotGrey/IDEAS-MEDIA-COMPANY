@@ -32,22 +32,20 @@ const phoneSchema = z
     .min(1, "Phone number is required")
     .regex(/^\+?[1-9]\d{1,14}$/, "Please enter a valid phone number");
 
-// NIN validation (11 digits for Nigerian NIN)
+// NIN validation (11 digits for Nigerian NIN) - Optional but must be valid if provided
 const ninSchema = z
     .string()
-    .min(1, "NIN is required")
-    .regex(/^\d{11}$/, "NIN must be exactly 11 digits")
-    .refine((val) => val.length === 11, {
+    .optional()
+    .refine((val) => !val || /^\d{11}$/.test(val), {
         message: "NIN must be exactly 11 digits"
     });
 
-// Driver's License validation (Nigerian format)
+// Driver's License validation (Nigerian format) - Optional but must be valid if provided
 const driversLicenseSchema = z
     .string()
-    .min(1, "Driver's License Number is required")
-    .regex(/^[A-Z]{3}\d{6}[A-Z]{2}\d{2}$/, "Please enter a valid Driver's License Number (e.g., ABC123456XY12)")
-    .refine((val) => val.length === 13, {
-        message: "Driver's License Number must be exactly 13 characters"
+    .optional()
+    .refine((val) => !val || /^[A-Z]{3}\d{6}[A-Z]{2}\d{2}$/.test(val), {
+        message: "Please enter a valid Driver's License Number (e.g., ABC123456XY12)"
     });
 
 // Sign In Schema
@@ -64,8 +62,8 @@ export const signUpSchema = z
         lastName: nameSchema,
         email: emailSchema,
         phone: phoneSchema,
-        nin: ninSchema.optional(),
-        driversLicense: driversLicenseSchema.optional(),
+        nin: ninSchema,
+        driversLicense: driversLicenseSchema,
         password: passwordSchema,
         confirmPassword: z.string().min(1, "Please confirm your password"),
         acceptTerms: z.boolean().refine((val) => val === true, {
@@ -79,6 +77,10 @@ export const signUpSchema = z
     .refine((data) => data.nin || data.driversLicense, {
         message: "Either NIN or Driver's License is required",
         path: ["nin"],
+    })
+    .refine((data) => data.nin || data.driversLicense, {
+        message: "Either NIN or Driver's License is required",
+        path: ["driversLicense"],
     });
 
 // Forgot Password Schema

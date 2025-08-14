@@ -1,5 +1,11 @@
 import jwt from 'jsonwebtoken';
 import { models } from '@ideal-photography/shared/mongoDB/index.js';
+import {
+    JWT_SECRET,
+    JWT_REFRESH_SECRET,
+    JWT_EXPIRES_IN,
+    JWT_REFRESH_EXPIRES_IN,
+} from '../config/env.js';
 
 /**
  * Authentication middleware for JWT token verification
@@ -22,7 +28,7 @@ const authMiddleware = async (req, res, next) => {
         }
 
         // Verify JWT token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
 
         // Fetch user from database
         const user = await models.User.findById(decoded.userId).select('-password');
@@ -48,10 +54,6 @@ const authMiddleware = async (req, res, next) => {
                 message: 'Your account is temporarily locked due to too many failed login attempts. Please try again later.'
             });
         }
-
-        // Update last activity
-        user.lastLogin = new Date();
-        await user.save();
 
         // Attach user to request
         req.user = user;
@@ -223,16 +225,14 @@ const generateToken = (user, type = 'access') => {
         userId: user._id,
         email: user.email,
         role: user.role,
-        type
+        type,
+        aud: 'client',
+        iss: 'ideal-photography'
     };
 
-    const secret = type === 'refresh'
-        ? process.env.JWT_REFRESH_SECRET
-        : process.env.JWT_SECRET;
+    const secret = type === 'refresh' ? JWT_REFRESH_SECRET : JWT_SECRET;
 
-    const expiresIn = type === 'refresh'
-        ? process.env.JWT_REFRESH_EXPIRES_IN || '7d'
-        : process.env.JWT_EXPIRES_IN || '15m';
+    const expiresIn = type === 'refresh' ? JWT_REFRESH_EXPIRES_IN : JWT_EXPIRES_IN;
 
     return jwt.sign(payload, secret, { expiresIn });
 };
@@ -242,7 +242,7 @@ const generateToken = (user, type = 'access') => {
  * @param {string} token - Refresh token
  */
 const verifyRefreshToken = (token) => {
-    return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    return jwt.verify(token, JWT_REFRESH_SECRET);
 };
 
 export default authMiddleware;

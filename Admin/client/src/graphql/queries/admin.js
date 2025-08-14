@@ -1,26 +1,26 @@
 import { gql } from '@apollo/client';
-import { USER_FULL_FRAGMENT } from '../fragments/user.js';
+import { ADMIN_FULL_FRAGMENT } from '../fragments/admin.js';
 
 // Admin Authentication
 export const ADMIN_LOGIN = gql`
-  mutation AdminLogin($input: LoginInput!) {
+  mutation AdminLogin($input: AdminLoginInput!) {
     adminLogin(input: $input) {
       token
-      user {
-        ...UserFull
+      admin {
+        ...AdminFull
       }
     }
   }
-  ${USER_FULL_FRAGMENT}
+  ${ADMIN_FULL_FRAGMENT}
 `;
 
 export const GET_CURRENT_ADMIN = gql`
   query GetCurrentAdmin {
     currentAdmin {
-      ...UserFull
+      ...AdminFull
     }
   }
-  ${USER_FULL_FRAGMENT}
+  ${ADMIN_FULL_FRAGMENT}
 `;
 
 // User Management

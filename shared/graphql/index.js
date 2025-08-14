@@ -1,10 +1,13 @@
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { mergeResolvers } from '@graphql-tools/merge';
 import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
+import { expressMiddleware } from '@as-integrations/express5';
+import jwt from 'jsonwebtoken';
+import { models } from '../mongoDB/index.js';
 
 // Import all typeDefs
 import userTypeDefs from './typeDefs/user.type.js';
+import adminTypeDefs from './typeDefs/admin.type.js';
 import productTypeDefs from './typeDefs/product.type.js';
 import bookingTypeDefs from './typeDefs/booking.type.js';
 import serviceTypeDefs from './typeDefs/service.type.js';
@@ -18,6 +21,7 @@ import auditLogTypeDefs from './typeDefs/auditLog.type.js';
 
 // Import all resolvers
 import userResolvers from './resolvers/user.resolver.js';
+import adminResolvers from './resolvers/admin.resolver.js';
 import productResolvers from './resolvers/product.resolver.js';
 import bookingResolvers from './resolvers/booking.resolver.js';
 import serviceResolvers from './resolvers/service.resolver.js';
@@ -58,6 +62,7 @@ const baseTypeDefs = `
 const typeDefs = mergeTypeDefs([
     baseTypeDefs,
     userTypeDefs,
+    adminTypeDefs,
     productTypeDefs,
     bookingTypeDefs,
     serviceTypeDefs,
@@ -72,6 +77,7 @@ const typeDefs = mergeTypeDefs([
 
 const resolvers = mergeResolvers([
     userResolvers,
+    adminResolvers,
     productResolvers,
     bookingResolvers,
     serviceResolvers,
@@ -86,18 +92,38 @@ const resolvers = mergeResolvers([
 
 // Authentication middleware
 const authMiddleware = (req) => {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    // TODO: Implement JWT verification
-    return { token, user: req.user };
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.substring(7)
+        : null;
+
+    if (!token) {
+        req.user = null;
+        return { token: null, user: null };
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Attach minimal claims in case DB lookup fails
+        req.tokenPayload = decoded;
+        return {
+            token,
+            user: null,
+        };
+    } catch (err) {
+        // Invalid token; proceed unauthenticated
+        req.user = null;
+        return { token: null, user: null };
+    }
 };
 
 // Audit logging middleware
 const auditMiddleware = async (req, resolverName, args, result, error) => {
     // TODO: Implement audit logging for mutations
     if (resolverName.includes('Mutation') && req.user) {
-        const { createAuditLog } = await import('../mongoDB/index.js');
         try {
-            await createAuditLog.utils.createAuditLog(
+            const { utils: mongoUtils } = await import('../mongoDB/index.js');
+            await mongoUtils.createAuditLog(
                 resolverName,
                 { user: req.user._id, userInfo: { name: req.user.name, email: req.user.email, role: req.user.role } },
                 { resourceType: 'graphql', resourceName: resolverName },
@@ -111,33 +137,57 @@ const auditMiddleware = async (req, resolverName, args, result, error) => {
 };
 
 // Enhanced context function
-const createContext = ({ req, res }) => {
+const createContext = async ({ req, res }) => {
     const auth = authMiddleware(req);
+
+    let user = null;
+    // If an upstream middleware (like admin server) already populated req.user, trust it
+    if (req.user) {
+        user = req.user;
+    } else if (auth.token) {
+        try {
+            if (req.tokenPayload?.userId) {
+                const foundUser = await models.User.findById(req.tokenPayload.userId).select('-password');
+                if (foundUser && foundUser.isActive && !foundUser.isLocked) {
+                    user = foundUser;
+                    req.user = foundUser;
+                }
+            } else if (req.tokenPayload?.adminId) {
+                const foundAdmin = await models.Admin.findById(req.tokenPayload.adminId).select('-password');
+                if (foundAdmin && foundAdmin.isActive) {
+                    user = foundAdmin; // expose as user in context for authorization helpers
+                    req.user = foundAdmin;
+                }
+            }
+        } catch (_) {
+            req.user = null;
+        }
+    }
 
     return {
         req,
         res,
-        user: auth.user,
+        user,
         token: auth.token,
-        isAuthenticated: !!auth.user,
-        isAdmin: auth.user?.role === 'admin' || auth.user?.role === 'super_admin',
-        isSuperAdmin: auth.user?.role === 'super_admin',
+        isAuthenticated: !!user,
+        isAdmin: user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'manager',
+        isSuperAdmin: user?.role === 'super_admin',
         // Helper functions for common operations
         requireAuth: () => {
-            if (!auth.user) throw new Error('Authentication required');
+            if (!user) throw new Error('Authentication required');
         },
         requireAdmin: () => {
-            if (!auth.user || !['admin', 'super_admin', 'manager'].includes(auth.user.role)) {
+            if (!user || !['admin', 'super_admin', 'manager'].includes(user.role)) {
                 throw new Error('Admin access required');
             }
         },
         requireSuperAdmin: () => {
-            if (!auth.user || auth.user.role !== 'super_admin') {
+            if (!user || user.role !== 'super_admin') {
                 throw new Error('Super admin access required');
             }
         },
         checkPermission: (permission) => {
-            if (!auth.user?.permissions?.includes(permission)) {
+            if (!user?.permissions?.includes(permission)) {
                 throw new Error(`Permission ${permission} required`);
             }
         },
@@ -174,7 +224,7 @@ const auditPlugin = {
     }
 };
 
-// Helper function to create Apollo Server v4 instance
+// Helper function to create Apollo Server v5 instance
 const createApolloServer = (options = {}) => {
     return new ApolloServer({
         typeDefs,

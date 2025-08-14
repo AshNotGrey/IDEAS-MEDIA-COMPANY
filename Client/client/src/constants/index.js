@@ -1,7 +1,440 @@
 // UI Strings
 export const SITE_NAME = "Ideal Photography";
 export const TAGLINE = "Your premier destination for professional photography equipment rentals.";
+// Mock data for development and testing
+export const MOCK_HISTORY_ITEMS = [
+    // Rental items
+    {
+        id: "rental_1",
+        type: "rental",
+        ref: "BK-R001",
+        title: "Sony A7 III Camera Kit",
+        date: "2024-01-15T10:00:00Z",
+        time: "10:00 AM",
+        status: "completed",
+        total: 45000,
+        currency: "NGN",
+        location: "Ideas Media Company, Ikeja",
+        items: [
+            {
+                name: "Sony A7 III Camera",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 25000,
+                subtotal: 25000,
+                rentalPeriod: {
+                    startDate: "2024-01-15",
+                    endDate: "2024-01-17",
+                    duration: "3 days",
+                },
+            },
+            {
+                name: "50mm f/1.8 Lens",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 15000,
+                subtotal: 15000,
+                rentalPeriod: {
+                    startDate: "2024-01-15",
+                    endDate: "2024-01-17",
+                    duration: "3 days",
+                },
+            },
+            {
+                name: "Camera Bag",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 5000,
+                subtotal: 5000,
+                rentalPeriod: {
+                    startDate: "2024-01-15",
+                    endDate: "2024-01-17",
+                    duration: "3 days",
+                },
+            },
+        ],
+        createdAt: "2024-01-12T08:30:00Z",
+        updatedAt: "2024-01-17T18:00:00Z",
+        receipt: { generated: true, url: "/receipts/rental_1.pdf" },
+    },
+    {
+        id: "rental_2",
+        type: "rental",
+        ref: "BK-R002",
+        title: "Professional Lighting Setup",
+        date: "2024-01-20T09:00:00Z",
+        time: "09:00 AM",
+        status: "confirmed",
+        total: 35000,
+        currency: "NGN",
+        location: "Ideas Media Company, Ikeja",
+        items: [
+            {
+                name: "Godox Studio Light Kit",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 20000,
+                subtotal: 20000,
+                rentalPeriod: {
+                    startDate: "2024-01-20",
+                    endDate: "2024-01-22",
+                    duration: "3 days",
+                },
+            },
+            {
+                name: "Light Stands (Set of 3)",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 10000,
+                subtotal: 10000,
+                rentalPeriod: {
+                    startDate: "2024-01-20",
+                    endDate: "2024-01-22",
+                    duration: "3 days",
+                },
+            },
+            {
+                name: "Backdrop Stand",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 5000,
+                subtotal: 5000,
+                rentalPeriod: {
+                    startDate: "2024-01-20",
+                    endDate: "2024-01-22",
+                    duration: "3 days",
+                },
+            },
+        ],
+        createdAt: "2024-01-18T14:20:00Z",
+        updatedAt: "2024-01-18T14:20:00Z",
+    },
 
+    // Photoshoot items
+    {
+        id: "photoshoot_1",
+        type: "photoshoot",
+        ref: "BK-P001",
+        title: "Portrait Photography Session",
+        date: "2024-01-10T14:00:00Z",
+        time: "2:00 PM",
+        status: "completed",
+        total: 80000,
+        currency: "NGN",
+        location: "Ideas Media Studio, Victoria Island",
+        items: [
+            {
+                name: "Portrait Photography Session",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                duration: "2 hours",
+                serviceDetails: {
+                    date: "2024-01-10",
+                    time: "2:00 PM",
+                    duration: "2 hours",
+                    specialRequests: "Professional headshots for LinkedIn",
+                },
+            },
+        ],
+        createdAt: "2024-01-08T11:00:00Z",
+        updatedAt: "2024-01-10T16:30:00Z",
+        receipt: { generated: true, url: "/receipts/photoshoot_1.pdf" },
+    },
+    {
+        id: "photoshoot_2",
+        type: "photoshoot",
+        ref: "BK-P002",
+        title: "Wedding Photography Package",
+        date: "2024-01-25T10:00:00Z",
+        time: "10:00 AM",
+        status: "confirmed",
+        total: 250000,
+        currency: "NGN",
+        location: "Federal Palace Hotel, Victoria Island",
+        items: [
+            {
+                name: "Full Wedding Photography",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                duration: "8 hours",
+                serviceDetails: {
+                    date: "2024-01-25",
+                    time: "10:00 AM",
+                    duration: "8 hours",
+                    specialRequests: "Traditional and white wedding coverage",
+                },
+            },
+        ],
+        createdAt: "2024-01-15T09:45:00Z",
+        updatedAt: "2024-01-15T09:45:00Z",
+    },
+
+    // Makeover items
+    {
+        id: "makeover_1",
+        type: "makeover",
+        ref: "BK-M001",
+        title: "Bridal Makeover Package",
+        date: "2024-01-08T08:00:00Z",
+        time: "8:00 AM",
+        status: "completed",
+        total: 120000,
+        currency: "NGN",
+        location: "Ideas Beauty Studio, Ikeja",
+        items: [
+            {
+                name: "Bridal Makeup & Hair",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                duration: "4 hours",
+                serviceDetails: {
+                    date: "2024-01-08",
+                    time: "8:00 AM",
+                    duration: "4 hours",
+                    specialRequests: "Traditional Nigerian bride look",
+                },
+            },
+        ],
+        createdAt: "2024-01-05T16:30:00Z",
+        updatedAt: "2024-01-08T12:30:00Z",
+        receipt: { generated: true, url: "/receipts/makeover_1.pdf" },
+    },
+    {
+        id: "makeover_2",
+        type: "makeover",
+        ref: "BK-M002",
+        title: "Professional Headshot Makeover",
+        date: "2024-01-22T11:00:00Z",
+        time: "11:00 AM",
+        status: "pending",
+        total: 45000,
+        currency: "NGN",
+        location: "Ideas Beauty Studio, Ikeja",
+        items: [
+            {
+                name: "Professional Makeup",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                duration: "2 hours",
+                serviceDetails: {
+                    date: "2024-01-22",
+                    time: "11:00 AM",
+                    duration: "2 hours",
+                    specialRequests: "Natural corporate look",
+                },
+            },
+        ],
+        createdAt: "2024-01-19T13:15:00Z",
+        updatedAt: "2024-01-19T13:15:00Z",
+    },
+
+    // Shop items
+    {
+        id: "shop_1",
+        type: "shop",
+        ref: "ORD-S001",
+        title: "Photography Accessories",
+        date: "2024-01-12T15:30:00Z",
+        time: null,
+        status: "delivered",
+        total: 25000,
+        currency: "NGN",
+        location: "Delivery Address: 123 Mainland Street, Lagos",
+        items: [
+            {
+                name: "Memory Card 64GB",
+                quantity: 2,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 8000,
+                subtotal: 16000,
+            },
+            {
+                name: "Camera Cleaning Kit",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 5000,
+                subtotal: 5000,
+            },
+            {
+                name: "Lens Filter UV 67mm",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 4000,
+                subtotal: 4000,
+            },
+        ],
+        createdAt: "2024-01-12T15:30:00Z",
+        updatedAt: "2024-01-14T10:45:00Z",
+        receipt: { generated: true, url: "/receipts/shop_1.pdf" },
+    },
+    {
+        id: "shop_2",
+        type: "shop",
+        ref: "ORD-S002",
+        title: "Studio Essentials",
+        date: "2024-01-18T12:00:00Z",
+        time: null,
+        status: "processing",
+        total: 15000,
+        currency: "NGN",
+        location: "Pickup: Ideas Media Company, Ikeja",
+        items: [
+            {
+                name: "Backdrop Paper Roll - White",
+                quantity: 2,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 6000,
+                subtotal: 12000,
+            },
+            {
+                name: "Gaffer Tape",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 3000,
+                subtotal: 3000,
+            },
+        ],
+        createdAt: "2024-01-18T12:00:00Z",
+        updatedAt: "2024-01-18T14:30:00Z",
+    },
+
+    // Additional items for variety
+    {
+        id: "rental_3",
+        type: "rental",
+        ref: "BK-R003",
+        title: "Video Equipment Package",
+        date: "2024-01-05T13:00:00Z",
+        time: "1:00 PM",
+        status: "returned",
+        total: 85000,
+        currency: "NGN",
+        location: "Ideas Media Company, Ikeja",
+        items: [
+            {
+                name: "Sony FX3 Cinema Camera",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 50000,
+                subtotal: 50000,
+                rentalPeriod: {
+                    startDate: "2024-01-05",
+                    endDate: "2024-01-08",
+                    duration: "4 days",
+                },
+            },
+            {
+                name: "Wireless Mic System",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 20000,
+                subtotal: 20000,
+                rentalPeriod: {
+                    startDate: "2024-01-05",
+                    endDate: "2024-01-08",
+                    duration: "4 days",
+                },
+            },
+            {
+                name: "Tripod - Carbon Fiber",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                unitPrice: 15000,
+                subtotal: 15000,
+                rentalPeriod: {
+                    startDate: "2024-01-05",
+                    endDate: "2024-01-08",
+                    duration: "4 days",
+                },
+            },
+        ],
+        createdAt: "2024-01-03T10:00:00Z",
+        updatedAt: "2024-01-08T17:30:00Z",
+        receipt: { generated: true, url: "/receipts/rental_3.pdf" },
+    },
+    {
+        id: "photoshoot_3",
+        type: "photoshoot",
+        ref: "BK-P003",
+        title: "Product Photography",
+        date: "2023-12-28T11:00:00Z",
+        time: "11:00 AM",
+        status: "completed",
+        total: 65000,
+        currency: "NGN",
+        location: "Ideas Media Studio, Victoria Island",
+        items: [
+            {
+                name: "Product Photography Session",
+                quantity: 1,
+                thumb: "/api/placeholder/100/100",
+                duration: "3 hours",
+                serviceDetails: {
+                    date: "2023-12-28",
+                    time: "11:00 AM",
+                    duration: "3 hours",
+                    specialRequests: "White background, 20 products",
+                },
+            },
+        ],
+        createdAt: "2023-12-26T09:20:00Z",
+        updatedAt: "2023-12-28T14:45:00Z",
+        receipt: { generated: true, url: "/receipts/photoshoot_3.pdf" },
+    },
+];
+// Mock stats calculation
+export const calculateMockStats = (items) => {
+    const stats = {
+        total: items.length,
+        byType: {
+            rental: 0,
+            photoshoot: 0,
+            makeover: 0,
+            shop: 0,
+        },
+        byStatus: {
+            completed: 0,
+            upcoming: 0,
+            cancelled: 0,
+            refunded: 0,
+        },
+        totalSpent: 0,
+        avgOrderValue: 0,
+    };
+
+    items.forEach((item) => {
+        // Count by type
+        if (stats.byType[item.type] !== undefined) {
+            stats.byType[item.type]++;
+        }
+
+        // Count by status category
+        if (["completed", "delivered", "returned"].includes(item.status)) {
+            stats.byStatus.completed++;
+        } else if (
+            ["confirmed", "pending", "processing", "ready_for_pickup", "in_progress"].includes(
+                item.status
+            )
+        ) {
+            stats.byStatus.upcoming++;
+        } else if (item.status === "cancelled") {
+            stats.byStatus.cancelled++;
+        } else if (item.status === "refunded") {
+            stats.byStatus.refunded++;
+        }
+
+        // Calculate totals
+        if (item.total && ["completed", "delivered", "in_progress", "returned"].includes(item.status)) {
+            stats.totalSpent += item.total;
+        }
+    });
+
+    // Calculate average
+    const completedOrders = stats.byStatus.completed;
+    stats.avgOrderValue = completedOrders > 0 ? stats.totalSpent / completedOrders : 0;
+
+    return stats;
+};
 // Dummy product data for ProductList page
 export const DUMMY_PRODUCTS = [
     {
