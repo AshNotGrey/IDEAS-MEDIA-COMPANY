@@ -6,17 +6,12 @@ const galleryTypeDefs = gql`
     title: String!
     description: String
     category: String!
-    coverImage: String!
     images: [GalleryImage!]!
-    client: User
-    booking: Booking
-    isPublic: Boolean!
-    isFeatured: Boolean!
-    accessCode: String
-    settings: GallerySettings!
-    stats: GalleryStats!
+    coverImage: String
+    isPublished: Boolean!
+    featured: Boolean!
     tags: [String!]
-    expiresAt: String
+    createdBy: User!
     createdAt: String
     updatedAt: String
   }
@@ -53,16 +48,11 @@ const galleryTypeDefs = gql`
     title: String!
     description: String
     category: String!
-    coverImage: String!
     images: [GalleryImageInput!]!
-    client: ID
-    booking: ID
-    isPublic: Boolean
-    isFeatured: Boolean
-    accessCode: String
-    settings: GallerySettingsInput
+    coverImage: String
+    isPublished: Boolean
+    featured: Boolean
     tags: [String!]
-    expiresAt: String
   }
 
   input GalleryImageInput {
@@ -87,31 +77,88 @@ const galleryTypeDefs = gql`
     rightClickProtection: Boolean
   }
 
-  input GalleryFilter {
-    category: String
-    isPublic: Boolean
-    isFeatured: Boolean
-    client: ID
+  # Response Types for Admin
+  type GalleriesResponse {
+    galleries: [Gallery!]!
+    total: Int!
+    page: Int!
+    limit: Int!
+    totalPages: Int!
   }
 
-  type Query {
+  type GalleryStats {
+    totalGalleries: Int!
+    publishedGalleries: Int!
+    unpublishedGalleries: Int!
+    featuredGalleries: Int!
+    categoryStats: [CategoryStat!]!
+    monthlyStats: [MonthlyStat!]!
+  }
+
+  type CategoryStat {
+    _id: String!
+    count: Int!
+  }
+
+  type MonthlyStat {
+    _id: MonthYear!
+    count: Int!
+  }
+
+  type MonthYear {
+    year: Int!
+    month: Int!
+  }
+
+  # Update Input for bulk operations
+  input UpdateGalleryInput {
+    title: String
+    description: String
+    category: String
+    images: [GalleryImageInput!]
+    coverImage: String
+    isPublished: Boolean
+    featured: Boolean
+    tags: [String!]
+  }
+
+  input GalleryFilter {
+    category: String
+    isPublished: Boolean
+    featured: Boolean
+  }
+
+  extend type Query {
     galleries(filter: GalleryFilter): [Gallery!]!
     gallery(id: ID!): Gallery
     publicGalleries: [Gallery!]!
     featuredGalleries: [Gallery!]!
-    clientGalleries(clientId: ID!): [Gallery!]!
-    galleryByAccessCode(accessCode: String!): Gallery
+    
+    # Admin-only queries
+    galleryStats: GalleryStats!
+    allGalleries(
+      page: Int = 1
+      limit: Int = 20
+      search: String
+      category: String
+      published: Boolean
+      sortBy: String = "createdAt"
+      sortOrder: String = "desc"
+    ): GalleriesResponse!
   }
 
-  type Mutation {
+  extend type Mutation {
     createGallery(input: GalleryInput!): Gallery!
     updateGallery(id: ID!, input: GalleryInput!): Gallery!
     deleteGallery(id: ID!): Gallery!
-    toggleGalleryPublic(id: ID!): Gallery!
+    toggleGalleryPublished(id: ID!): Gallery!
     toggleGalleryFeatured(id: ID!): Gallery!
-    incrementGalleryViews(id: ID!): Gallery!
     addImageToGallery(galleryId: ID!, image: GalleryImageInput!): Gallery!
     removeImageFromGallery(galleryId: ID!, imageUrl: String!): Gallery!
+    
+    # Admin bulk operations
+    bulkUpdateGalleries(ids: [ID!]!, input: UpdateGalleryInput!): [Gallery!]!
+    bulkDeleteGalleries(ids: [ID!]!): Boolean!
   }
 `;
 

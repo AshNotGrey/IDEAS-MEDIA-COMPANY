@@ -36,6 +36,11 @@ const bookingSchema = new mongoose.Schema({
         phone: String,
         email: String,
         alternateContact: String
+    },
+    assignedTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Admin',
+        required: false
     }
 }, { timestamps: true });
 

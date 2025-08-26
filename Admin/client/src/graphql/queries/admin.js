@@ -1,27 +1,5 @@
 import { gql } from '@apollo/client';
-import { ADMIN_FULL_FRAGMENT } from '../fragments/admin.js';
-
-// Admin Authentication
-export const ADMIN_LOGIN = gql`
-  mutation AdminLogin($input: AdminLoginInput!) {
-    adminLogin(input: $input) {
-      token
-      admin {
-        ...AdminFull
-      }
-    }
-  }
-  ${ADMIN_FULL_FRAGMENT}
-`;
-
-export const GET_CURRENT_ADMIN = gql`
-  query GetCurrentAdmin {
-    currentAdmin {
-      ...AdminFull
-    }
-  }
-  ${ADMIN_FULL_FRAGMENT}
-`;
+import { USER_FULL_FRAGMENT } from '../fragments/user.js';
 
 // User Management
 export const GET_ALL_USERS = gql`
@@ -80,16 +58,16 @@ export const GET_DASHBOARD_STATS = gql`
       activeGalleries
       recentBookings {
         _id
+        status
+        totalAmount
+        createdAt
         client {
           name
           email
         }
-        product {
+        service {
           name
         }
-        date
-        status
-        totalAmount
       }
       monthlyRevenue {
         month
@@ -97,51 +75,154 @@ export const GET_DASHBOARD_STATS = gql`
         bookings
       }
       popularServices {
-        service {
-          _id
+        _id
+        bookings
+        revenue
+        serviceInfo {
           name
+          category
         }
-        bookingCount
       }
     }
   }
 `;
 
-// Business Analytics
-export const GET_ANALYTICS = gql`
-  query GetAnalytics($startDate: String!, $endDate: String!) {
-    analytics(startDate: $startDate, endDate: $endDate) {
-      bookingStats {
+// Advanced Analytics Queries
+export const GET_REVENUE_ANALYTICS = gql`
+  query GetRevenueAnalytics($startDate: String, $endDate: String, $period: String) {
+    getRevenueAnalytics(startDate: $startDate, endDate: $endDate, period: $period) {
+      period
+      data {
+        _id {
+          year
+          month
+          day
+          week
+        }
+        revenue
+        bookings
+        avgOrderValue
+      }
+      totalRevenue
+      totalBookings
+      avgOrderValue
+      growthRate
+    }
+  }
+`;
+
+export const GET_BOOKING_ANALYTICS = gql`
+  query GetBookingAnalytics($period: String, $limit: Int) {
+    getBookingAnalytics(period: $period, limit: $limit) {
+      bookingTrends {
+        _id {
+          year
+          month
+        }
         total
+        confirmed
         completed
         cancelled
-        pending
         revenue
       }
-      serviceStats {
-        service {
-          _id
+      statusDistribution {
+        _id
+        count
+      }
+      peakHours {
+        _id
+        count
+      }
+      servicePopularity {
+        _id
+        bookings
+        revenue
+        serviceInfo {
           name
           category
         }
-        bookings
-        revenue
       }
-      clientStats {
-        newClients
-        returningClients
-        averageBookingValue
-      }
-      galleryStats {
-        totalViews
-        totalDownloads
-        mostViewedGallery {
-          _id
-          title
-          stats {
-            views
-          }
+    }
+  }
+`;
+
+export const GET_USER_ANALYTICS = gql`
+  query GetUserAnalytics {
+    getUserAnalytics {
+      userGrowth {
+        _id {
+          year
+          month
         }
+        newUsers
+      }
+      verificationStats {
+        total
+        emailVerified
+        idVerified
+        active
+      }
+      activityPatterns {
+        avgBookingsPerUser
+        avgSpentPerUser
+        totalActiveUsers
+      }
+      geographicData {
+        _id
+        count
+      }
+    }
+  }
+`;
+
+export const GET_SERVICE_ANALYTICS = gql`
+  query GetServiceAnalytics {
+    getServiceAnalytics {
+      servicePerformance {
+        _id
+        name
+        category
+        basePrice
+        totalBookings
+        totalRevenue
+        avgRating
+        isActive
+        featured
+      }
+      categoryPerformance {
+        _id
+        totalServices
+        activeServices
+        totalBookings
+        totalRevenue
+        avgPrice
+      }
+      pricingAnalysis {
+        _id
+        minPrice
+        maxPrice
+        avgPrice
+        count
+      }
+    }
+  }
+`;
+
+// Legacy Analytics (keeping for compatibility)
+export const GET_ANALYTICS = gql`
+  query GetAnalytics($startDate: String!, $endDate: String!) {
+    getRevenueAnalytics(startDate: $startDate, endDate: $endDate) {
+      totalRevenue
+      totalBookings
+      avgOrderValue
+      data {
+        _id {
+          year
+          month
+          day
+        }
+        revenue
+        bookings
       }
     }
   }

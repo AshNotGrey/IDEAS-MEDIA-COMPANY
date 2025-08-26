@@ -1,7 +1,25 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { models } from '../../mongoDB/index.js';
-import { sendMail, buildVerificationEmail, buildResetPasswordEmail } from '../../utils/email.js';
+import {
+    sendMail,
+    buildVerificationEmail,
+    buildResetPasswordEmail,
+    buildWelcomeEmail,
+    buildIDVerificationStatusEmail
+} from '../../utils/email.js';
+import {
+    sendWelcomeNotification,
+    sendVerificationNotification,
+    sendAdminNewUserNotification,
+    sendAdminVerificationNotification,
+    getActiveAdminIds,
+    checkNotificationPreferences
+} from '../../utils/notifications.js';
+import { QueryBuilder, queryMonitor } from '../../utils/queryOptimization.js';
+import { cache, CacheKeys, CacheTTL, CacheInvalidation, withCache } from '../../utils/caching.js';
+import { ResponseOptimizer, DataTransformer } from '../../utils/responseOptimization.js';
+import { jobQueue } from '../../utils/backgroundJobs.js';
 
 const userResolvers = {
     Query: {
@@ -10,35 +28,35 @@ const userResolvers = {
             return user;
         },
 
-        users: async (_, { filter = {}, page = 1, limit = 20, sortBy = "createdAt", sortOrder = "desc" }) => {
-            const skip = (page - 1) * limit;
-            const sort = { [sortBy]: sortOrder === "desc" ? -1 : 1 };
+        users: withCache(
+            (args) => CacheKeys.userList(args),
+            CacheTTL.SHORT
+        )(async (_, { filter = {}, page = 1, limit = 20, sortBy = "createdAt", sortOrder = "desc" }) => {
+            const queryId = `users_${Date.now()}`;
+            queryMonitor.startQuery(queryId, 'users_list', 'users');
 
-            let query = {};
+            try {
+                // Use optimized query builder
+                const pipeline = QueryBuilder.users.list(filter, { page, limit, sortBy, sortOrder: sortOrder === "desc" ? -1 : 1 });
+                const countPipeline = QueryBuilder.users.count(filter);
 
-            if (filter.role) query.role = filter.role;
-            if (filter.isActive !== undefined) query.isActive = filter.isActive;
-            if (filter.isEmailVerified !== undefined) query.isEmailVerified = filter.isEmailVerified;
-            if (filter.search) {
-                query.$or = [
-                    { name: { $regex: filter.search, $options: 'i' } },
-                    { email: { $regex: filter.search, $options: 'i' } }
-                ];
+                const [users, countResult] = await Promise.all([
+                    models.User.aggregate(pipeline),
+                    models.User.aggregate(countPipeline)
+                ]);
+
+                const total = countResult[0]?.total || 0;
+                const transformedUsers = DataTransformer.transformArray(users);
+
+                const result = ResponseOptimizer.paginate(transformedUsers, page, limit, total);
+
+                queryMonitor.endQuery(queryId);
+                return result;
+            } catch (error) {
+                queryMonitor.endQuery(queryId);
+                throw error;
             }
-
-            const [users, total] = await Promise.all([
-                models.User.find(query).sort(sort).skip(skip).limit(limit),
-                models.User.countDocuments(query)
-            ]);
-
-            return {
-                users,
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
-            };
-        },
+        }),
 
         user: async (_, { id }) => {
             return await models.User.findById(id);
@@ -46,6 +64,63 @@ const userResolvers = {
 
         userByEmail: async (_, { email }) => {
             return await models.User.findOne({ email: email.toLowerCase() });
+        },
+
+        // Admin-only analytics queries
+        userStats: async (_, __, { user }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            const [
+                totalUsers,
+                activeUsers,
+                verifiedUsers,
+                newUsersThisMonth,
+                usersByRole
+            ] = await Promise.all([
+                models.User.countDocuments(),
+                models.User.countDocuments({ isActive: true }),
+                models.User.countDocuments({ isEmailVerified: true }),
+                models.User.countDocuments({
+                    createdAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) }
+                }),
+                models.User.aggregate([
+                    { $group: { _id: '$role', count: { $sum: 1 } } },
+                    { $project: { role: '$_id', count: 1, _id: 0 } }
+                ])
+            ]);
+
+            return {
+                totalUsers,
+                activeUsers,
+                verifiedUsers,
+                newUsersThisMonth,
+                usersByRole
+            };
+        },
+
+        verificationQueue: async (_, __, { user }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            return await models.User.find({
+                $or: [
+                    { 'verification.nin.status': 'pending' },
+                    { 'verification.driversLicense.status': 'pending' }
+                ]
+            }).sort({ 'verification.nin.submittedAt': -1, 'verification.driversLicense.submittedAt': -1 });
+        },
+
+        lockedAccounts: async (_, __, { user }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            return await models.User.find({
+                lockUntil: { $gt: new Date() }
+            }).sort({ lockUntil: -1 });
         }
     },
 
@@ -83,6 +158,58 @@ const userResolvers = {
                 };
 
                 const user = await models.User.create(userData);
+
+                // Send welcome email and notifications using background jobs
+                try {
+                    const preferences = await checkNotificationPreferences(user._id);
+
+                    // Queue welcome email job
+                    if (preferences.email) {
+                        jobQueue.add('send-welcome-email', {
+                            userId: user._id.toString(),
+                            email: user.email,
+                            firstName: user.name.split(' ')[0]
+                        }, { priority: 10 }); // High priority for welcome emails
+                    }
+
+                    // Send email verification automatically
+                    const emailToken = jwt.sign(
+                        { userId: user._id },
+                        process.env.JWT_SECRET,
+                        { expiresIn: '24h' }
+                    );
+                    await models.User.findByIdAndUpdate(user._id, {
+                        emailVerificationToken: emailToken,
+                        emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+                    });
+
+                    const baseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+                    const verifyUrl = `${baseUrl}/email-verification?token=${encodeURIComponent(emailToken)}&email=${encodeURIComponent(user.email)}`;
+                    const { html, text } = buildVerificationEmail({ name: user.name, url: verifyUrl });
+
+                    // Send verification email (high priority background job)
+                    jobQueue.add('send-email-verification', {
+                        to: user.email,
+                        subject: 'Verify your email address - IDEAS MEDIA COMPANY',
+                        html,
+                        text
+                    }, { priority: 9 }); // High priority for verification emails
+
+                    // Send welcome push notification (immediate for better UX)
+                    if (preferences.push) {
+                        await sendWelcomeNotification(user._id, user.name);
+                    }
+
+                    // Notify admins of new user registration
+                    const adminIds = await getActiveAdminIds();
+                    if (adminIds.length > 0) {
+                        await sendAdminNewUserNotification(adminIds, user);
+                    }
+
+                } catch (notificationError) {
+                    console.error('Failed to send welcome notifications:', notificationError);
+                    // Don't fail registration if notifications fail
+                }
 
                 // Generate JWT token
                 const token = jwt.sign(
@@ -357,12 +484,317 @@ const userResolvers = {
 
                 await models.User.findByIdAndUpdate(user._id, updateData);
 
+                // Notify admins of new verification submission
+                try {
+                    const adminIds = await getActiveAdminIds();
+                    if (adminIds.length > 0) {
+                        await sendAdminVerificationNotification(adminIds, user, input.type);
+                    }
+                } catch (notificationError) {
+                    console.error('Failed to send admin verification notification:', notificationError);
+                }
+
                 return {
                     success: true,
                     message: 'ID verification submitted successfully'
                 };
             } catch (error) {
                 throw new Error('Failed to submit ID verification');
+            }
+        },
+
+        // Admin user management mutations
+        updateUser: async (_, { id, input }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                const updatedUser = await models.User.findByIdAndUpdate(id, input, { new: true });
+                if (!updatedUser) {
+                    throw new Error('User not found');
+                }
+
+                // Invalidate related caches
+                CacheInvalidation.user(id);
+
+                try { await context?.audit?.('Mutation.updateUser', { userId: id }, { status: 'success' }); } catch (_) { }
+                return DataTransformer.transformDocument(updatedUser);
+            } catch (error) {
+                try { await context?.audit?.('Mutation.updateUser', { userId: id }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        activateUser: async (_, { id }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                const updatedUser = await models.User.findByIdAndUpdate(
+                    id,
+                    { isActive: true },
+                    { new: true }
+                );
+                if (!updatedUser) {
+                    throw new Error('User not found');
+                }
+
+                try { await context?.audit?.('Mutation.activateUser', { userId: id }, { status: 'success' }); } catch (_) { }
+                return updatedUser;
+            } catch (error) {
+                try { await context?.audit?.('Mutation.activateUser', { userId: id }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        deactivateUser: async (_, { id }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                const updatedUser = await models.User.findByIdAndUpdate(
+                    id,
+                    { isActive: false },
+                    { new: true }
+                );
+                if (!updatedUser) {
+                    throw new Error('User not found');
+                }
+
+                try { await context?.audit?.('Mutation.deactivateUser', { userId: id }, { status: 'success' }); } catch (_) { }
+                return updatedUser;
+            } catch (error) {
+                try { await context?.audit?.('Mutation.deactivateUser', { userId: id }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        updateUserRole: async (_, { id, role, permissions }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                // Users can only have 'client' role - this is for updating user permissions within client role
+                const updatedUser = await models.User.findByIdAndUpdate(
+                    id,
+                    { permissions }, // Only update permissions, role stays 'client'
+                    { new: true }
+                );
+                if (!updatedUser) {
+                    throw new Error('User not found');
+                }
+
+                try { await context?.audit?.('Mutation.updateUserRole', { userId: id, permissions }, { status: 'success' }); } catch (_) { }
+                return updatedUser;
+            } catch (error) {
+                try { await context?.audit?.('Mutation.updateUserRole', { userId: id, permissions }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        approveVerification: async (_, { userId, type }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                const updateData = {};
+                updateData[`verification.${type}.status`] = 'verified';
+                updateData[`verification.${type}.verifiedAt`] = new Date();
+                updateData[`verification.${type}.rejectionReason`] = undefined;
+
+                const updatedUser = await models.User.findByIdAndUpdate(userId, updateData, { new: true });
+                if (!updatedUser) {
+                    throw new Error('User not found');
+                }
+
+                // Send verification approval email and notification
+                try {
+                    const preferences = await checkNotificationPreferences(userId);
+
+                    // Send verification approval email (background job)
+                    if (preferences.email) {
+                        jobQueue.add('send-id-verification-status', {
+                            userId: updatedUser._id.toString(),
+                            email: updatedUser.email,
+                            name: updatedUser.name,
+                            type,
+                            status: 'verified'
+                        }, { priority: 8 }); // High priority for verification status
+                    }
+
+                    // Send verification approval push notification
+                    if (preferences.push) {
+                        await sendVerificationNotification(userId, type, 'verified');
+                    }
+
+                } catch (notificationError) {
+                    console.error('Failed to send verification approval notifications:', notificationError);
+                }
+
+                try { await context?.audit?.('Mutation.approveVerification', { userId, type }, { status: 'success' }); } catch (_) { }
+                return {
+                    success: true,
+                    message: `${type} verification approved successfully`
+                };
+            } catch (error) {
+                try { await context?.audit?.('Mutation.approveVerification', { userId, type }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        rejectVerification: async (_, { userId, type, reason }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                const updateData = {};
+                updateData[`verification.${type}.status`] = 'rejected';
+                updateData[`verification.${type}.rejectionReason`] = reason;
+                updateData[`verification.${type}.verifiedAt`] = undefined;
+
+                const updatedUser = await models.User.findByIdAndUpdate(userId, updateData, { new: true });
+                if (!updatedUser) {
+                    throw new Error('User not found');
+                }
+
+                // Send verification rejection email and notification
+                try {
+                    const preferences = await checkNotificationPreferences(userId);
+
+                    // Send verification rejection email (background job)
+                    if (preferences.email) {
+                        jobQueue.add('send-id-verification-status', {
+                            userId: updatedUser._id.toString(),
+                            email: updatedUser.email,
+                            name: updatedUser.name,
+                            type,
+                            status: 'rejected',
+                            reason
+                        }, { priority: 8 }); // High priority for verification status
+                    }
+
+                    // Send verification rejection push notification
+                    if (preferences.push) {
+                        await sendVerificationNotification(userId, type, 'rejected', reason);
+                    }
+
+                } catch (notificationError) {
+                    console.error('Failed to send verification rejection notifications:', notificationError);
+                }
+
+                try { await context?.audit?.('Mutation.rejectVerification', { userId, type, reason }, { status: 'success' }); } catch (_) { }
+                return {
+                    success: true,
+                    message: `${type} verification rejected`
+                };
+            } catch (error) {
+                try { await context?.audit?.('Mutation.rejectVerification', { userId, type, reason }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        unlockAccount: async (_, { id }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                const updatedUser = await models.User.findByIdAndUpdate(
+                    id,
+                    {
+                        $unset: { lockUntil: 1, loginAttempts: 1 }
+                    },
+                    { new: true }
+                );
+                if (!updatedUser) {
+                    throw new Error('User not found');
+                }
+
+                try { await context?.audit?.('Mutation.unlockAccount', { userId: id }, { status: 'success' }); } catch (_) { }
+                return updatedUser;
+            } catch (error) {
+                try { await context?.audit?.('Mutation.unlockAccount', { userId: id }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        resetLoginAttempts: async (_, { id }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                const targetUser = await models.User.findById(id);
+                if (!targetUser) {
+                    throw new Error('User not found');
+                }
+
+                await targetUser.resetLoginAttempts();
+                const updatedUser = await models.User.findById(id);
+
+                try { await context?.audit?.('Mutation.resetLoginAttempts', { userId: id }, { status: 'success' }); } catch (_) { }
+                return updatedUser;
+            } catch (error) {
+                try { await context?.audit?.('Mutation.resetLoginAttempts', { userId: id }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        bulkUpdateUsers: async (_, { ids, input }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                await models.User.updateMany({ _id: { $in: ids } }, input);
+                const updatedUsers = await models.User.find({ _id: { $in: ids } });
+
+                try { await context?.audit?.('Mutation.bulkUpdateUsers', { userIds: ids }, { status: 'success' }); } catch (_) { }
+                return updatedUsers;
+            } catch (error) {
+                try { await context?.audit?.('Mutation.bulkUpdateUsers', { userIds: ids }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        deleteUser: async (_, { id }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                const deletedUser = await models.User.findByIdAndDelete(id);
+                if (!deletedUser) {
+                    throw new Error('User not found');
+                }
+
+                try { await context?.audit?.('Mutation.deleteUser', { userId: id }, { status: 'success' }); } catch (_) { }
+                return true;
+            } catch (error) {
+                try { await context?.audit?.('Mutation.deleteUser', { userId: id }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
+            }
+        },
+
+        bulkDeleteUsers: async (_, { ids }, { user, ...context }) => {
+            if (!user || user.constructor.modelName !== 'Admin') {
+                throw new Error('Admin access required');
+            }
+
+            try {
+                await models.User.deleteMany({ _id: { $in: ids } });
+
+                try { await context?.audit?.('Mutation.bulkDeleteUsers', { userIds: ids }, { status: 'success' }); } catch (_) { }
+                return true;
+            } catch (error) {
+                try { await context?.audit?.('Mutation.bulkDeleteUsers', { userIds: ids }, { status: 'failure', message: error.message }); } catch (_) { }
+                throw new Error(error.message);
             }
         }
     }

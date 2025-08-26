@@ -56,7 +56,7 @@ const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID || ''
 // Web Push
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || ''
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || ''
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@idealphotography.com'
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:businessemail'
 
 // Cloudinary
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || ''

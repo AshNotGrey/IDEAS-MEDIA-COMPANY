@@ -33,7 +33,7 @@ const rateLimit = async (req, res, next) => {
 
 const router = express.Router();
 
-router.get('/status', (req, res) => {
+router.get('/status', authMiddleware, (req, res) => {
     res.json({
         message: 'Admin Auth status',
         authenticated: !!req.user,
@@ -190,7 +190,7 @@ router.post('/logout', async (req, res) => {
     return res.json({ success: true });
 });
 
-router.get('/me', (req, res) => {
+router.get('/me', authMiddleware, (req, res) => {
     if (!req.user) return res.status(401).json({ error: 'Authentication required' });
     return res.json(req.user);
 });
@@ -275,13 +275,15 @@ router.post('/register', rateLimit, async (req, res) => {
             role = invite.role || role;
             permissions = invite.permissions || [];
             isVerified = true;
+            verifiedBy = invite.createdBy;
+            verifiedAt = new Date();
         } else if (verifierUsername) {
             const verifier = await models.Admin.findOne({ username: String(verifierUsername).trim(), isVerified: true, isActive: true });
             if (!verifier) return res.status(400).json({ error: 'Verifier not found or not eligible' });
             // Require later explicit verification action
+            isVerified = false;
             verifiedBy = null;
             verifiedAt = null;
-            isVerified = false;
         } else {
             return res.status(400).json({ error: 'Provide an invite code or verifierUsername' });
         }

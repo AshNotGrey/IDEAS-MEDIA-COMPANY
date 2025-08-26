@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import { useInView } from "react-intersection-observer";
 
 /**
  * Reusable Image component with responsive handling and theme compliance
@@ -61,16 +62,49 @@ const Image = ({
   sources = {},
   onLoad,
   onError,
+  placeholder,
+  blurDataURL,
+  priority = false,
   ...rest
 }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState(priority ? src : placeholder || blurDataURL || "");
+
+  // Use intersection observer for lazy loading (unless priority is true)
+  const { ref, inView } = useInView({
+    threshold: 0.1,
+    triggerOnce: true,
+    skip: priority, // Skip intersection observer for priority images
+  });
+
+  // Load image when in view or priority is true
+  useEffect(() => {
+    if (inView || priority) {
+      setImageSrc(src);
+    }
+  }, [inView, priority, src]);
+
+  const handleLoad = (e) => {
+    setImageLoaded(true);
+    onLoad?.(e);
+  };
+
+  const handleError = (e) => {
+    setImageError(true);
+    onError?.(e);
+  };
+
   // Common image props
   const imageProps = {
-    src,
+    src: imageSrc,
     alt,
-    loading,
-    className: `w-full h-auto ${className}`.trim(),
-    onLoad,
-    onError,
+    loading: priority ? "eager" : loading,
+    className: `w-full h-auto transition-opacity duration-300 ${
+      imageLoaded ? "opacity-100" : "opacity-0"
+    } ${className}`.trim(),
+    onLoad: handleLoad,
+    onError: handleError,
     ...rest,
   };
 
@@ -82,24 +116,68 @@ const Image = ({
     imageProps.sizes = sizes;
   }
 
+  // Error state
+  if (imageError) {
+    return (
+      <div
+        ref={ref}
+        className={`bg-gray-200 dark:bg-gray-800 flex items-center justify-center ${className}`}
+        {...rest}>
+        <div className='text-gray-400 dark:text-gray-600 text-center p-4'>
+          <svg className='w-8 h-8 mx-auto mb-2' fill='currentColor' viewBox='0 0 20 20'>
+            <path
+              fillRule='evenodd'
+              d='M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z'
+              clipRule='evenodd'
+            />
+          </svg>
+          <p className='text-xs'>Failed to load image</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show placeholder while loading
+  const showPlaceholder = !imageLoaded && (placeholder || blurDataURL);
+
   // Render as picture element for art direction
   if (asPicture && Object.keys(sources).length > 0) {
     return (
-      <picture className={className}>
-        {/* Desktop source */}
-        {sources.desktop && <source srcSet={sources.desktop} media='(min-width: 1280px)' />}
-        {/* Tablet source */}
-        {sources.tablet && <source srcSet={sources.tablet} media='(min-width: 768px)' />}
-        {/* Mobile source */}
-        {sources.mobile && <source srcSet={sources.mobile} media='(max-width: 767px)' />}
-        {/* Fallback image */}
-        <img {...imageProps} />
-      </picture>
+      <div ref={ref} className='relative'>
+        {showPlaceholder && (
+          <img
+            src={placeholder || blurDataURL}
+            alt={alt}
+            className={`absolute inset-0 w-full h-auto filter blur-sm ${className}`}
+          />
+        )}
+        <picture className={className}>
+          {/* Desktop source */}
+          {sources.desktop && <source srcSet={sources.desktop} media='(min-width: 1280px)' />}
+          {/* Tablet source */}
+          {sources.tablet && <source srcSet={sources.tablet} media='(min-width: 768px)' />}
+          {/* Mobile source */}
+          {sources.mobile && <source srcSet={sources.mobile} media='(max-width: 767px)' />}
+          {/* Fallback image */}
+          <img {...imageProps} />
+        </picture>
+      </div>
     );
   }
 
   // Render as regular img element
-  return <img {...imageProps} />;
+  return (
+    <div ref={ref} className='relative'>
+      {showPlaceholder && (
+        <img
+          src={placeholder || blurDataURL}
+          alt={alt}
+          className={`absolute inset-0 w-full h-auto filter blur-sm ${className}`}
+        />
+      )}
+      <img {...imageProps} />
+    </div>
+  );
 };
 
 // PropTypes for runtime validation
@@ -118,6 +196,9 @@ Image.propTypes = {
   }),
   onLoad: PropTypes.func,
   onError: PropTypes.func,
+  placeholder: PropTypes.string,
+  blurDataURL: PropTypes.string,
+  priority: PropTypes.bool,
 };
 
 export default Image;

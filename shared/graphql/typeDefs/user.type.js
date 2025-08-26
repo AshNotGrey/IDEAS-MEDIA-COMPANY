@@ -265,8 +265,7 @@ export default gql`
     # Document verification
     submitVerificationDocument(input: VerificationDocumentInput!): VerificationResponse!
     
-    # Admin mutations
-    createAdmin(input: CreateAdminInput!): User!
+    # Admin mutations  
     updateUser(id: ID!, input: UpdateUserInput!): User!
     deleteUser(id: ID!): Boolean!
     activateUser(id: ID!): User!

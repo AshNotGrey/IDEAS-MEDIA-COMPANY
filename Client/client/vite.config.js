@@ -186,4 +186,82 @@ export default defineConfig({
       filename: 'sw.js'
     })
   ],
+  build: {
+    // Optimize chunk splitting for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-apollo': ['@apollo/client', 'graphql'],
+          'vendor-ui': ['@material-tailwind/react', 'framer-motion', 'gsap'],
+          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'vendor-utils': ['clsx', 'classnames', 'prop-types'],
+          
+          // Feature chunks
+          'auth': [
+            './src/components/auth/signIn.jsx',
+            './src/components/auth/signUp.jsx',
+            './src/components/auth/forgotPassword.jsx',
+            './src/components/auth/resetPassword.jsx',
+            './src/components/auth/emailVerification.jsx',
+            './src/components/auth/idVerification.jsx'
+          ],
+          'dashboard': [
+            './src/pages/Dashboard.jsx',
+            './src/pages/Settings.jsx',
+            './src/pages/History.jsx',
+            './src/pages/Notifications.jsx'
+          ],
+          'booking': [
+            './src/pages/EquipmentRentals.jsx',
+            './src/pages/MakeoverBookings.jsx',
+            './src/pages/PhotoshootBookings.jsx',
+            './src/pages/EventCoverage.jsx'
+          ],
+          'shopping': [
+            './src/pages/MiniMart.jsx',
+            './src/pages/Cart.jsx',
+            './src/pages/Checkout.jsx',
+            './src/pages/Wishlist.jsx'
+          ]
+        }
+      }
+    },
+    // Enable source maps for production debugging
+    sourcemap: false,
+    // Optimize assets
+    assetsInlineLimit: 4096, // 4kb
+    // Minimize CSS
+    cssMinify: true,
+    // Target modern browsers for better optimization
+    target: ['es2020', 'chrome80', 'firefox78', 'safari14'],
+    // Enable minification
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.log in production
+        drop_debugger: true
+      }
+    }
+  },
+  // Performance optimizations
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@apollo/client',
+      'graphql',
+      '@material-tailwind/react',
+      'framer-motion',
+      'gsap'
+    ]
+  },
+  server: {
+    // Improve dev server performance
+    fs: {
+      cachedChecks: false
+    }
+  }
 })

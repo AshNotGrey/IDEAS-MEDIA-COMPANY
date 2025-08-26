@@ -273,6 +273,22 @@ export default gql`
     ref: String!
   }
 
+  input NotificationPreferencesInput {
+    inApp: Boolean
+    email: Boolean
+    sms: Boolean
+    push: Boolean
+    emailFrequency: String
+    quietHours: QuietHoursInput
+  }
+
+  input QuietHoursInput {
+    enabled: Boolean
+    startTime: String
+    endTime: String
+    timezone: String
+  }
+
   input NotificationFilterInput {
     type: NotificationType
     category: NotificationCategory
@@ -321,6 +337,8 @@ export default gql`
       unreadOnly: Boolean = false
     ): [Notification!]!
     
+    unreadNotificationCount: Int!
+    
     # Admin queries
     notifications(
       filter: NotificationFilterInput
@@ -352,6 +370,7 @@ export default gql`
     # User interactions
     markNotificationAsRead(id: ID!): Boolean!
     markAllNotificationsAsRead: Boolean!
+    updateNotificationPreferences(input: NotificationPreferencesInput!): Boolean!
     
     # Analytics tracking
     recordNotificationOpen(id: ID!, channel: String = "email"): Boolean!

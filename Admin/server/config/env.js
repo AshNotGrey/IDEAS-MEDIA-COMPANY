@@ -25,8 +25,8 @@ const isProduction = NODE_ENV === 'production'
 const isDevelopment = NODE_ENV === 'development'
 
 const PORT = toInt(process.env.PORT, 4001)
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3002'
-const ADMIN_URL = process.env.ADMIN_URL || 'http://localhost:3003'
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173'
+const ADMIN_URL = process.env.ADMIN_URL || 'http://localhost:5176'
 
 const MONGODB_URI = required(process.env.MONGODB_URI, 'MONGODB_URI')
 
@@ -46,7 +46,7 @@ const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY || ''
 // Web Push
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || ''
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || ''
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@idealphotography.com'
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:businessemail'
 
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || ''
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || ''

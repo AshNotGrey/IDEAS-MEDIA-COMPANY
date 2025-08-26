@@ -301,7 +301,7 @@ const Settings = () => {
                 <h4 className='font-medium'>Email Verification</h4>
                 <p className='text-sm text-gray-600 dark:text-gray-400'>
                   Status:{" "}
-                  {user?.emailVerified ? (
+                  {user?.isEmailVerified ? (
                     <span className='text-green-600 dark:text-green-400 font-medium'>
                       Verified ✓
                     </span>
@@ -313,7 +313,7 @@ const Settings = () => {
                 </p>
               </div>
             </div>
-            {!user?.emailVerified && (
+            {!user?.isEmailVerified && (
               <Button
                 variant='secondary'
                 size='sm'
@@ -368,9 +368,12 @@ const Settings = () => {
                   )}
                 </p>
                 {user?.verificationStatus === "rejected" &&
-                  user?.verification?.nin?.rejectionReason && (
+                  (user?.verification?.nin?.rejectionReason ||
+                    user?.verification?.driversLicense?.rejectionReason) && (
                     <p className='text-xs text-red-600 dark:text-red-400 mt-1'>
-                      Reason: {user.verification.nin.rejectionReason}
+                      Reason:{" "}
+                      {user.verification.nin?.rejectionReason ||
+                        user.verification.driversLicense?.rejectionReason}
                     </p>
                   )}
               </div>

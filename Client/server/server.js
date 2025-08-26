@@ -54,6 +54,7 @@ import webhookRoutes from './routes/webhooks.js';
 import paymentsRoutes from './routes/payments.js';
 import healthRoutes from './routes/health.js';
 import notificationsRoutes from './routes/notifications.js';
+import campaignRoutes from './routes/campaign.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 
@@ -99,11 +100,8 @@ app.use(helmet({
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = new Set([
-            CLIENT_URL || 'http://localhost:3000',
-            ADMIN_URL || 'http://localhost:3001',
-            // Common Vite dev server ports
-            'http://localhost:5173',
-            'http://localhost:5174',
+            CLIENT_URL || 'http://localhost:5173',
+            ADMIN_URL || 'http://localhost:5176',
         ]);
 
         // Allow requests with no origin like curl/postman or same-origin
@@ -228,6 +226,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/campaigns', campaignRoutes);
 
 // Serve static files in production
 if (NODE_ENV === 'production') {
@@ -318,6 +317,8 @@ async function startServer() {
             console.log('='.repeat(50).green);
             console.log(`🌍 Server URL: http://localhost:${PORT}`.cyan);
             console.log(`🚀 GraphQL URL: http://localhost:${PORT}/graphql`.cyan);
+            console.log(`🔍 OpenAPI URL: http://localhost:${PORT}/openapi.json`.cyan);
+            console.log(`🔍 Swagger URL: http://localhost:${PORT}/api-docs`.cyan);
             console.log(`🔍 Health Check: http://localhost:${PORT}/health`.cyan);
             console.log(`📦 Environment: ${NODE_ENV}`.yellow);
             console.log(`🔐 JWT Secret: ${JWT_SECRET ? '✅ Configured' : '❌ Missing'}`.yellow);

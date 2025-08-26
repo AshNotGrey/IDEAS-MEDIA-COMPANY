@@ -103,19 +103,82 @@ const serviceTypeDefs = gql`
     maxPrice: Float
   }
 
-  type Query {
+  # Response Types for Admin
+  type ServicesResponse {
+    services: [Service!]!
+    total: Int!
+    page: Int!
+    limit: Int!
+    totalPages: Int!
+  }
+
+  type ServiceStats {
+    totalServices: Int!
+    activeServices: Int!
+    inactiveServices: Int!
+    featuredServices: Int!
+    categoryStats: [CategoryStat!]!
+    avgPricing: [PricingStat!]!
+  }
+
+  type CategoryStat {
+    _id: String!
+    count: Int!
+  }
+
+  type PricingStat {
+    _id: String!
+    avgPrice: Float!
+    minPrice: Float!
+    maxPrice: Float!
+  }
+
+  # Update Input for bulk operations
+  input UpdateServiceInput {
+    name: String
+    description: String
+    category: String
+    basePrice: Float
+    priceStructure: PriceStructureInput
+    duration: DurationRangeInput
+    includes: [String!]
+    addOns: [AddOnInput!]
+    equipment: [String!]
+    deliverables: DeliverablesInput
+    isActive: Boolean
+    featured: Boolean
+    images: [String!]
+    tags: [String!]
+  }
+
+  extend type Query {
     services(filter: ServiceFilter): [Service!]!
     service(id: ID!): Service
     featuredServices: [Service!]!
     servicesByCategory(category: String!): [Service!]!
+    
+    # Admin-only queries
+    serviceStats: ServiceStats!
+    allServices(
+      page: Int = 1
+      limit: Int = 20
+      search: String
+      category: String
+      sortBy: String = "createdAt"
+      sortOrder: String = "desc"
+    ): ServicesResponse!
   }
 
-  type Mutation {
+  extend type Mutation {
     createService(input: ServiceInput!): Service!
     updateService(id: ID!, input: ServiceInput!): Service!
     deleteService(id: ID!): Service!
     toggleServiceStatus(id: ID!): Service!
     toggleServiceFeatured(id: ID!): Service!
+    
+    # Admin bulk operations
+    bulkUpdateServices(ids: [ID!]!, input: UpdateServiceInput!): [Service!]!
+    bulkDeleteServices(ids: [ID!]!): Boolean!
   }
 `;
 

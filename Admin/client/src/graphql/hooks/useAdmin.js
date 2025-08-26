@@ -1,8 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import {
-    ADMIN_LOGIN,
-    GET_CURRENT_ADMIN,
     GET_ALL_USERS,
     CREATE_USER,
     UPDATE_USER,
@@ -11,86 +8,6 @@ import {
     GET_DASHBOARD_STATS,
     GET_ANALYTICS
 } from '../queries/admin.js';
-
-export const useAdminAuth = () => {
-    const [admin, setAdmin] = useState(null);
-    const [token, setToken] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [loading, setLoading] = useState(true);
-
-    // Get current admin query
-    const { data: currentAdminData, loading: adminLoading, refetch: refetchAdmin } = useQuery(GET_CURRENT_ADMIN, {
-        skip: !token,
-        errorPolicy: 'ignore'
-    });
-
-    // Admin login mutation
-    const [adminLoginMutation] = useMutation(ADMIN_LOGIN);
-
-    // Initialize auth state from localStorage
-    useEffect(() => {
-        const storedToken = localStorage.getItem('adminToken');
-        const storedAdmin = localStorage.getItem('adminUser');
-
-        if (storedToken && storedAdmin) {
-            setToken(storedToken);
-            setAdmin(JSON.parse(storedAdmin));
-            setIsAuthenticated(true);
-        }
-        setLoading(false);
-    }, []);
-
-    // Update admin when currentAdminData changes
-    useEffect(() => {
-        if (currentAdminData?.currentAdmin) {
-            setAdmin(currentAdminData.currentAdmin);
-            localStorage.setItem('adminUser', JSON.stringify(currentAdminData.currentAdmin));
-        }
-    }, [currentAdminData]);
-
-    const login = async (credentials) => {
-        try {
-            const { data } = await adminLoginMutation({
-                variables: { input: credentials }
-            });
-
-            const { token: authToken, refreshToken, admin: adminData } = data.adminLogin;
-
-            // Store in localStorage
-            localStorage.setItem('adminToken', authToken);
-            if (refreshToken) localStorage.setItem('adminRefreshToken', refreshToken);
-            localStorage.setItem('adminUser', JSON.stringify(adminData));
-
-            // Update state
-            setToken(authToken);
-            setAdmin(adminData);
-            setIsAuthenticated(true);
-
-            return { success: true, admin: adminData, token: authToken, refreshToken };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    };
-
-    const logout = () => {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminRefreshToken');
-        localStorage.removeItem('adminUser');
-        setToken(null);
-        setAdmin(null);
-        setIsAuthenticated(false);
-    };
-
-    return {
-        admin,
-        token,
-        isAuthenticated,
-        loading: loading || adminLoading,
-        login,
-        logout,
-        refetchAdmin
-    };
-};
 
 export const useUserManagement = () => {
     // Queries
@@ -203,7 +120,8 @@ export const useDashboard = () => {
     };
 };
 
-export const useAnalytics = (startDate, endDate) => {
+// Legacy analytics hook - use useAnalytics from useAnalytics.js for comprehensive analytics
+export const useLegacyAnalytics = (startDate, endDate) => {
     const {
         data,
         loading,
@@ -216,7 +134,7 @@ export const useAnalytics = (startDate, endDate) => {
     });
 
     return {
-        analytics: data?.analytics,
+        analytics: data?.getRevenueAnalytics,
         loading,
         error,
         refetch

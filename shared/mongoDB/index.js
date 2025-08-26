@@ -17,6 +17,9 @@ import Transaction from './models/Transaction.js';
 import AuditLog from './models/AuditLog.js';
 import Settings from './models/Settings.js';
 import PushSubscription from './models/PushSubscription.js';
+import Media from './models/Media.js';
+import EmailTemplate from './models/EmailTemplate.js';
+import EmailCampaign from './models/EmailCampaign.js';
 
 // Database connection helper
 const connectDB = async (uri, options = {}) => {
@@ -108,6 +111,9 @@ export const models = {
     AuditLog,
     Settings,
     PushSubscription,
+    Media,
+    EmailTemplate,
+    EmailCampaign,
 };
 
 // Convenience exports for common operations

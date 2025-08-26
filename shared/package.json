@@ -1,12 +1,13 @@
 {
     "name": "@ideal-photography/shared",
-    "version": "1.3.8",
+    "version": "1.3.23",
     "description": "Shared GraphQL (Apollo Server v5) and Mongoose logic for Ideal Photography PWAs: users, products, services, bookings, orders/cart, galleries, reviews, notifications, campaigns, settings, and audit logs.",
     "main": "index.js",
     "type": "module",
     "files": [
         "mongoDB/",
         "graphql/",
+        "services/",
         "validations/",
         "utils/",
         "index.js",

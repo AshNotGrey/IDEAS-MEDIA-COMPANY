@@ -75,7 +75,7 @@ const slides = [
  * ```
  */
 const Hero = () => (
-  <HeroCarousel slides={slides} autoPlay={true} interval={20000} className='hero-section' />
+  <HeroCarousel slides={slides} autoPlay={true} interval={3000} className='hero-section' />
 );
 
 export default Hero;

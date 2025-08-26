@@ -45,4 +45,73 @@ export default defineConfig({
             filename: 'sw.js'
         })
     ],
+    build: {
+        // Optimize chunk splitting for admin app
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    // Vendor chunks
+                    'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+                    'vendor-apollo': ['@apollo/client', 'graphql'],
+                    'vendor-ui': ['lucide-react', 'react-toastify'],
+                    'vendor-forms': ['react-hook-form'],
+                    'vendor-utils': ['clsx', 'prop-types'],
+                    
+                    // Feature chunks
+                    'auth': [
+                        './src/components/auth/AdminLogin.jsx',
+                        './src/components/auth/ProtectedRoute.jsx'
+                    ],
+                    'dashboard': [
+                        './src/components/Dashboard.jsx',
+                        './src/components/dashboard/StatsCard.jsx',
+                        './src/components/dashboard/QuickActions.jsx',
+                        './src/components/dashboard/RecentActivity.jsx'
+                    ],
+                    'management': [
+                        './src/pages/Users.jsx',
+                        './src/pages/Services.jsx',
+                        './src/pages/MediaLibrary.jsx',
+                        './src/pages/EmailTemplates.jsx',
+                        './src/pages/Settings.jsx'
+                    ],
+                    'analytics': [
+                        './src/pages/Analytics.jsx',
+                        './src/components/analytics/RevenueChart.jsx',
+                        './src/components/analytics/BookingTrends.jsx',
+                        './src/components/analytics/UserGrowth.jsx',
+                        './src/components/analytics/ServicePerformance.jsx'
+                    ]
+                }
+            }
+        },
+        sourcemap: false,
+        assetsInlineLimit: 4096,
+        cssMinify: true,
+        target: ['es2020', 'chrome80', 'firefox78', 'safari14'],
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true
+            }
+        }
+    },
+    optimizeDeps: {
+        include: [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            '@apollo/client',
+            'graphql',
+            'lucide-react',
+            'react-toastify'
+        ]
+    },
+    server: {
+        port: 5176,
+        fs: {
+            cachedChecks: false
+        }
+    }
 })

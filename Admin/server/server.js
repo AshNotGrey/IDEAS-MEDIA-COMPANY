@@ -61,12 +61,8 @@ app.use(helmet({
 app.use(cors({
     origin: function (origin, callback) {
         const allowedOrigins = new Set([
-            ADMIN_URL || 'http://localhost:3003',
-            CLIENT_URL || 'http://localhost:3002',
-            'http://localhost:3001',
-            'http://localhost:3000',
-            'http://localhost:5173',
-            'http://localhost:5174',
+            ADMIN_URL || 'http://localhost:5176',
+            CLIENT_URL || 'http://localhost:5173',
         ]);
 
         if (!origin) return callback(null, true);
@@ -90,7 +86,7 @@ app.use(cors({
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-admin-access', 'x-refresh-token', 'x-device-id', 'x-device-name', 'x-device-platform', 'x-device-browser']
 }));
 
 // Logging middleware (clean, colorized, and filtered)
@@ -167,6 +163,10 @@ const globalRateLimit = async (req, res, next) => {
 };
 app.use(globalRateLimit);
 
+app.get('/', (req, res) => {
+    res.send('Admin server is running');
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -216,10 +216,13 @@ app.get('/openapi.json', (req, res) => {
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Auth and webhook routes
-app.use('/api/auth/me', authMiddleware);
 app.use('/api/auth', authRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/notifications', notificationsRoutes);
+
+// Import and add upload routes
+import uploadRoutes from './routes/upload.js';
+app.use('/api/upload', uploadRoutes);
 
 // Serve static files in production
 if (NODE_ENV === 'production') {
@@ -299,9 +302,7 @@ const startServer = async () => {
             cors: {
                 origin: function (origin, callback) {
                     const allowedOrigins = new Set([
-                        ADMIN_URL || 'http://localhost:3003',
-                        'http://localhost:5173',
-                        'http://localhost:5174',
+                        ADMIN_URL || 'http://localhost:5176',
                     ]);
                     if (!origin || allowedOrigins.has(origin)) return callback(null, true);
                     try {
@@ -324,6 +325,8 @@ const startServer = async () => {
             console.log('='.repeat(50).green);
             console.log(`🌍 Server URL: http://localhost:${PORT}`.cyan);
             console.log(`🚀 GraphQL URL: http://localhost:${PORT}/admin-graphql`.cyan);
+            console.log(`🔍 OpenAPI URL: http://localhost:${PORT}/openapi.json`.cyan);
+            console.log(`🔍 Swagger URL: http://localhost:${PORT}/api-docs`.cyan);
             console.log(`🔍 Health Check: http://localhost:${PORT}/health`.cyan);
             console.log(`📦 Environment: ${NODE_ENV}`.yellow);
             console.log(`🔐 JWT Secret: ${JWT_SECRET ? '✅ Configured' : '❌ Missing'}`.yellow);

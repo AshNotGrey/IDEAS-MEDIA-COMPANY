@@ -16,6 +16,9 @@ const definition = {
     tags: [
         { name: 'Health', description: 'Health endpoints' },
         { name: 'Auth', description: 'Authentication endpoints (Admin REST)' },
+        { name: 'Notifications', description: 'Push notification endpoints' },
+        { name: 'Webhooks', description: 'Webhook service endpoints' },
+        { name: 'Upload', description: 'File upload and media management endpoints' },
     ],
 };
 
@@ -165,6 +168,323 @@ const paths = {
                 404: { description: 'Admin not found' }
             }
         }
+    },
+    '/api/notifications/vapid-public-key': {
+        get: {
+            tags: ['Notifications'],
+            summary: 'Get VAPID public key',
+            description: 'Retrieve the VAPID public key for push notification subscriptions.',
+            responses: {
+                200: {
+                    description: 'VAPID public key',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/VapidKeyResponse' }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    '/api/notifications/subscribe': {
+        post: {
+            tags: ['Notifications'],
+            summary: 'Subscribe to push notifications',
+            description: 'Subscribe to push notifications with device subscription details.',
+            security: [{ bearerAuth: [] }],
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: { $ref: '#/components/schemas/PushSubscriptionRequest' }
+                    }
+                }
+            },
+            responses: {
+                200: {
+                    description: 'Subscription successful',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/SubscriptionResponse' }
+                        }
+                    }
+                },
+                400: { description: 'Invalid subscription data' },
+                401: { description: 'Unauthorized' },
+                500: { description: 'Subscription failed' }
+            }
+        }
+    },
+    '/api/webhooks/status': {
+        get: {
+            tags: ['Webhooks'],
+            summary: 'Webhook service status',
+            description: 'Check if the webhook service is available.',
+            responses: {
+                200: {
+                    description: 'Webhook service status',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/WebhookStatusResponse' }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    '/api/upload/status': {
+        get: {
+            tags: ['Upload'],
+            summary: 'Upload service status',
+            description: 'Check upload service status and configuration.',
+            responses: {
+                200: {
+                    description: 'Upload service status',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/UploadStatusResponse' }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    '/api/upload/single': {
+        post: {
+            tags: ['Upload'],
+            summary: 'Upload single file',
+            description: 'Upload a single file to Cloudinary with metadata.',
+            security: [{ bearerAuth: [] }],
+            requestBody: {
+                required: true,
+                content: {
+                    'multipart/form-data': {
+                        schema: { $ref: '#/components/schemas/SingleUploadRequest' }
+                    }
+                }
+            },
+            responses: {
+                200: {
+                    description: 'File uploaded successfully',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/UploadResponse' }
+                        }
+                    }
+                },
+                400: { description: 'No file provided' },
+                401: { description: 'Unauthorized' },
+                500: { description: 'Upload failed' }
+            }
+        }
+    },
+    '/api/upload/multiple': {
+        post: {
+            tags: ['Upload'],
+            summary: 'Upload multiple files',
+            description: 'Upload multiple files to Cloudinary with metadata.',
+            security: [{ bearerAuth: [] }],
+            requestBody: {
+                required: true,
+                content: {
+                    'multipart/form-data': {
+                        schema: { $ref: '#/components/schemas/MultipleUploadRequest' }
+                    }
+                }
+            },
+            responses: {
+                200: {
+                    description: 'Files uploaded successfully',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/MultipleUploadResponse' }
+                        }
+                    }
+                },
+                400: { description: 'No files provided' },
+                401: { description: 'Unauthorized' },
+                500: { description: 'Upload failed' }
+            }
+        }
+    },
+    '/api/upload/media': {
+        get: {
+            tags: ['Upload'],
+            summary: 'Get media files',
+            description: 'Retrieve media files with pagination, filtering, and sorting.',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                { name: 'category', in: 'query', schema: { type: 'string' }, description: 'Filter by category' },
+                { name: 'type', in: 'query', schema: { type: 'string' }, description: 'Filter by file type' },
+                { name: 'page', in: 'query', schema: { type: 'integer', default: 1 }, description: 'Page number' },
+                { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 }, description: 'Items per page' },
+                { name: 'search', in: 'query', schema: { type: 'string' }, description: 'Search term' },
+                { name: 'sortBy', in: 'query', schema: { type: 'string', default: 'createdAt' }, description: 'Sort field' },
+                { name: 'sortOrder', in: 'query', schema: { type: 'string', enum: ['asc', 'desc'], default: 'desc' }, description: 'Sort order' }
+            ],
+            responses: {
+                200: {
+                    description: 'Media files retrieved successfully',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/MediaListResponse' }
+                        }
+                    }
+                },
+                401: { description: 'Unauthorized' },
+                500: { description: 'Failed to retrieve media' }
+            }
+        }
+    },
+    '/api/upload/media/{id}': {
+        get: {
+            tags: ['Upload'],
+            summary: 'Get media file by ID',
+            description: 'Retrieve a specific media file by its ID.',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Media file ID' }
+            ],
+            responses: {
+                200: {
+                    description: 'Media file retrieved successfully',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/MediaResponse' }
+                        }
+                    }
+                },
+                401: { description: 'Unauthorized' },
+                404: { description: 'Media file not found' },
+                500: { description: 'Failed to retrieve media' }
+            }
+        },
+        put: {
+            tags: ['Upload'],
+            summary: 'Update media metadata',
+            description: 'Update metadata for a specific media file.',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Media file ID' }
+            ],
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: { $ref: '#/components/schemas/MediaUpdateRequest' }
+                    }
+                }
+            },
+            responses: {
+                200: {
+                    description: 'Media metadata updated successfully',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/MediaResponse' }
+                        }
+                    }
+                },
+                401: { description: 'Unauthorized' },
+                404: { description: 'Media file not found' },
+                500: { description: 'Failed to update media' }
+            }
+        },
+        delete: {
+            tags: ['Upload'],
+            summary: 'Delete media file',
+            description: 'Delete a media file from both Cloudinary and the database.',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Media file ID' }
+            ],
+            responses: {
+                200: {
+                    description: 'Media file deleted successfully',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/DeleteResponse' }
+                        }
+                    }
+                },
+                401: { description: 'Unauthorized' },
+                404: { description: 'Media file not found' },
+                500: { description: 'Failed to delete media' }
+            }
+        }
+    },
+    '/api/upload/folders/{folderPath}': {
+        get: {
+            tags: ['Upload'],
+            summary: 'Get folder contents',
+            description: 'Retrieve contents of a Cloudinary folder.',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                { name: 'folderPath', in: 'path', required: true, schema: { type: 'string' }, description: 'Folder path' },
+                { name: 'max_results', in: 'query', schema: { type: 'integer', default: 50 }, description: 'Maximum results to return' },
+                { name: 'next_cursor', in: 'query', schema: { type: 'string' }, description: 'Pagination cursor' }
+            ],
+            responses: {
+                200: {
+                    description: 'Folder contents retrieved successfully',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/FolderContentsResponse' }
+                        }
+                    }
+                },
+                401: { description: 'Unauthorized' },
+                500: { description: 'Failed to retrieve folder contents' }
+            }
+        }
+    },
+    '/api/upload/folders': {
+        post: {
+            tags: ['Upload'],
+            summary: 'Create folder',
+            description: 'Create a new folder in Cloudinary.',
+            security: [{ bearerAuth: [] }],
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: { $ref: '#/components/schemas/CreateFolderRequest' }
+                    }
+                }
+            },
+            responses: {
+                200: {
+                    description: 'Folder created successfully',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/FolderResponse' }
+                        }
+                    }
+                },
+                400: { description: 'Folder path is required' },
+                401: { description: 'Unauthorized' },
+                500: { description: 'Failed to create folder' }
+            }
+        }
+    },
+    '/api/upload/stats': {
+        get: {
+            tags: ['Upload'],
+            summary: 'Get media statistics',
+            description: 'Retrieve media usage statistics and file counts.',
+            security: [{ bearerAuth: [] }],
+            responses: {
+                200: {
+                    description: 'Media statistics retrieved successfully',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/MediaStatsResponse' }
+                        }
+                    }
+                },
+                401: { description: 'Unauthorized' },
+                500: { description: 'Failed to retrieve statistics' }
+            }
+        }
     }
 };
 
@@ -287,6 +607,245 @@ const components = {
                 },
             ],
         },
+        VapidKeyResponse: {
+            type: 'object',
+            properties: {
+                publicKey: { type: 'string', description: 'VAPID public key for push notifications' }
+            }
+        },
+        PushSubscriptionRequest: {
+            type: 'object',
+            required: ['subscription'],
+            properties: {
+                subscription: {
+                    type: 'object',
+                    required: ['endpoint', 'keys'],
+                    properties: {
+                        endpoint: { type: 'string', description: 'Push subscription endpoint' },
+                        keys: {
+                            type: 'object',
+                            required: ['p256dh', 'auth'],
+                            properties: {
+                                p256dh: { type: 'string', description: 'P-256 DH key' },
+                                auth: { type: 'string', description: 'Authentication secret' }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        SubscriptionResponse: {
+            type: 'object',
+            properties: {
+                ok: { type: 'boolean' },
+                id: { type: 'string', description: 'Subscription ID' }
+            }
+        },
+        WebhookStatusResponse: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Admin webhook service is available' }
+            }
+        },
+        UploadStatusResponse: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Upload service is available' },
+                cloudinary: { type: 'string', enum: ['configured', 'not_configured'] },
+                maxFileSize: { type: 'string', example: '10MB' },
+                supportedTypes: { type: 'array', items: { type: 'string' }, example: ['image', 'document', 'video'] }
+            }
+        },
+        SingleUploadRequest: {
+            type: 'object',
+            required: ['file'],
+            properties: {
+                file: { type: 'string', format: 'binary', description: 'File to upload' },
+                category: { type: 'string', default: 'other', description: 'File category' },
+                folder: { type: 'string', default: 'uploads', description: 'Cloudinary folder' },
+                tags: { type: 'string', description: 'Comma-separated tags' },
+                alt: { type: 'string', description: 'Alt text for images' },
+                description: { type: 'string', description: 'File description' }
+            }
+        },
+        MultipleUploadRequest: {
+            type: 'object',
+            required: ['files'],
+            properties: {
+                files: { type: 'array', items: { type: 'string', format: 'binary' }, description: 'Files to upload' },
+                category: { type: 'string', default: 'other', description: 'File category' },
+                folder: { type: 'string', default: 'uploads', description: 'Cloudinary folder' },
+                tags: { type: 'string', description: 'Comma-separated tags' }
+            }
+        },
+        UploadResponse: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                message: { type: 'string' },
+                data: {
+                    type: 'object',
+                    properties: {
+                        media: { $ref: '#/components/schemas/Media' },
+                        cloudinary: { type: 'object', description: 'Cloudinary upload result' }
+                    }
+                }
+            }
+        },
+        MultipleUploadResponse: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                message: { type: 'string' },
+                data: {
+                    type: 'object',
+                    properties: {
+                        successful: { type: 'array', items: { $ref: '#/components/schemas/UploadResult' } },
+                        failed: { type: 'array', items: { $ref: '#/components/schemas/UploadError' } },
+                        summary: { $ref: '#/components/schemas/UploadSummary' }
+                    }
+                }
+            }
+        },
+        UploadResult: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                filename: { type: 'string' },
+                media: { $ref: '#/components/schemas/Media' },
+                cloudinary: { type: 'object' }
+            }
+        },
+        UploadError: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                filename: { type: 'string' },
+                error: { type: 'string' }
+            }
+        },
+        UploadSummary: {
+            type: 'object',
+            properties: {
+                total: { type: 'integer' },
+                successful: { type: 'integer' },
+                failed: { type: 'integer' }
+            }
+        },
+        Media: {
+            type: 'object',
+            properties: {
+                _id: { type: 'string' },
+                filename: { type: 'string' },
+                originalName: { type: 'string' },
+                mimeType: { type: 'string' },
+                fileSize: { type: 'number' },
+                cloudinaryId: { type: 'string' },
+                url: { type: 'string' },
+                secureUrl: { type: 'string' },
+                category: { type: 'string' },
+                folder: { type: 'string' },
+                tags: { type: 'array', items: { type: 'string' } },
+                alt: { type: 'string' },
+                description: { type: 'string' },
+                uploadedBy: { type: 'string' },
+                format: { type: 'string' },
+                dimensions: {
+                    type: 'object',
+                    properties: {
+                        width: { type: 'number' },
+                        height: { type: 'number' }
+                    }
+                },
+                transformations: { type: 'object' },
+                isActive: { type: 'boolean' },
+                createdAt: { type: 'string', format: 'date-time' },
+                updatedAt: { type: 'string', format: 'date-time' }
+            }
+        },
+        MediaListResponse: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                data: {
+                    type: 'object',
+                    properties: {
+                        media: { type: 'array', items: { $ref: '#/components/schemas/Media' } },
+                        pagination: { $ref: '#/components/schemas/Pagination' }
+                    }
+                }
+            }
+        },
+        MediaResponse: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                data: { $ref: '#/components/schemas/Media' }
+            }
+        },
+        MediaUpdateRequest: {
+            type: 'object',
+            properties: {
+                alt: { type: 'string', description: 'Alt text for images' },
+                description: { type: 'string', description: 'File description' },
+                tags: { type: 'array', items: { type: 'string' }, description: 'File tags' },
+                category: { type: 'string', description: 'File category' }
+            }
+        },
+        DeleteResponse: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                message: { type: 'string' }
+            }
+        },
+        FolderContentsResponse: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                data: { type: 'object', description: 'Cloudinary folder contents' }
+            }
+        },
+        CreateFolderRequest: {
+            type: 'object',
+            required: ['folderPath'],
+            properties: {
+                folderPath: { type: 'string', description: 'Path for the new folder' }
+            }
+        },
+        FolderResponse: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                message: { type: 'string' },
+                data: { type: 'object', description: 'Folder creation result' }
+            }
+        },
+        MediaStatsResponse: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean' },
+                data: {
+                    type: 'object',
+                    properties: {
+                        totalFiles: { type: 'number' },
+                        totalSize: { type: 'number' },
+                        byType: { type: 'object' }
+                    }
+                }
+            }
+        },
+        Pagination: {
+            type: 'object',
+            properties: {
+                currentPage: { type: 'integer' },
+                totalPages: { type: 'integer' },
+                totalItems: { type: 'integer' },
+                itemsPerPage: { type: 'integer' },
+                hasNextPage: { type: 'boolean' },
+                hasPrevPage: { type: 'boolean' }
+            }
+        }
     },
 };
 

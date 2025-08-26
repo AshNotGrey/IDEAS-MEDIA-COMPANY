@@ -47,6 +47,15 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
+// Middleware to require authentication
+const requireAuth = (req, res, next) => {
+    if (!req.user || !req.isAuthenticated) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+    next();
+};
+
 export default authMiddleware;
+export { requireAuth };
 
 

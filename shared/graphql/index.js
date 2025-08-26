@@ -18,6 +18,9 @@ import campaignTypeDefs from './typeDefs/campaign.type.js';
 import notificationTypeDefs from './typeDefs/notification.type.js';
 import settingsTypeDefs from './typeDefs/settings.type.js';
 import auditLogTypeDefs from './typeDefs/auditLog.type.js';
+import mediaTypeDefs from './typeDefs/media.type.js';
+import emailTemplateTypeDefs from './typeDefs/emailTemplate.type.js';
+import commonTypes from './typeDefs/common.types.js';
 
 // Import all resolvers
 import userResolvers from './resolvers/user.resolver.js';
@@ -32,12 +35,17 @@ import campaignResolvers from './resolvers/campaign.resolver.js';
 import notificationResolvers from './resolvers/notification.resolver.js';
 import settingsResolvers from './resolvers/settings.resolver.js';
 import auditLogResolvers from './resolvers/auditLog.resolver.js';
+import mediaResolvers from './resolvers/media.resolver.js';
+import emailTemplateResolvers from './resolvers/emailTemplate.resolver.js';
+import scalarResolvers from './resolvers/scalars.js';
 
 // Base GraphQL schema for common scalars and directives
 const baseTypeDefs = `
   scalar JSON
   scalar Upload
   scalar Date
+  scalar DateTime
+  scalar Time
   
   directive @auth(requires: [String!]) on FIELD_DEFINITION
   directive @admin(requires: [String!]) on FIELD_DEFINITION
@@ -61,6 +69,7 @@ const baseTypeDefs = `
 // Merge all typeDefs and resolvers
 const typeDefs = mergeTypeDefs([
     baseTypeDefs,
+    commonTypes,
     userTypeDefs,
     adminTypeDefs,
     productTypeDefs,
@@ -73,9 +82,12 @@ const typeDefs = mergeTypeDefs([
     notificationTypeDefs,
     settingsTypeDefs,
     auditLogTypeDefs,
+    mediaTypeDefs,
+    emailTemplateTypeDefs,
 ]);
 
 const resolvers = mergeResolvers([
+    scalarResolvers,
     userResolvers,
     adminResolvers,
     productResolvers,
@@ -88,6 +100,8 @@ const resolvers = mergeResolvers([
     notificationResolvers,
     settingsResolvers,
     auditLogResolvers,
+    mediaResolvers,
+    emailTemplateResolvers,
 ]);
 
 // Authentication middleware
@@ -261,7 +275,7 @@ const applyApolloMiddleware = async (app, server, options = {}) => {
     const defaultOptions = {
         context: createContext,
         cors: {
-            origin: process.env.CLIENT_URL || 'http://localhost:3000',
+            origin: process.env.CLIENT_URL || 'http://localhost:4001',
             credentials: true
         }
     };
